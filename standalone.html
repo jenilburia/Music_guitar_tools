@@ -6,434 +6,368 @@
   <title>Circle of Fifths — Guitar Tool</title>
   <style>
 /* ============================================================
-   Circle of Fifths — Guitar Tool
-   Dark music-studio aesthetic
+   Material Design 3 · Dark Theme · Purple seed
+   Standalone — no external dependencies
    ============================================================ */
 
-/* --- Design Tokens ----------------------------------------- */
 :root {
-  --bg-base:      #09090f;
-  --bg-surface:   #101018;
-  --bg-elevated:  #181826;
-  --bg-hover:     #1f1f30;
-
-  --text-primary:   #f0f0f8;
-  --text-secondary: #8888aa;
-  --text-muted:     #4a4a66;
-
-  --color-maj:  #f59e0b;
-  --color-min:  #6b7280;
-  --color-dim:  #ef4444;
-
-  --circle-selected:  #7c3aed;
-  --circle-fifth:     #0891b2;
-  --circle-fourth:    #0e7490;
-  --circle-rel-minor: #6d28d9;
-  --circle-default:   #1a1a28;
-  --circle-minor-default: #111120;
-
-  --accent:       #7c3aed;
-  --accent-hover: #6d28d9;
-  --danger:       #dc2626;
-
-  --radius-sm:  6px;
-  --radius-md:  12px;
-  --radius-lg:  18px;
-
-  --shadow-panel: 0 4px 24px rgba(0,0,0,0.5);
-  --glow-violet:  0 0 24px rgba(124,58,237,0.35);
-
-  --font-ui: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --md-primary:                #D0BCFF;
+  --md-on-primary:             #381E72;
+  --md-primary-container:      #4F378A;
+  --md-on-primary-container:   #EADDFF;
+  --md-secondary:              #CCC2DC;
+  --md-on-secondary:           #332D41;
+  --md-secondary-container:    #4A4458;
+  --md-on-secondary-container: #E8DEF8;
+  --md-tertiary:               #EFB8C8;
+  --md-on-tertiary:            #492532;
+  --md-tertiary-container:     #633B48;
+  --md-on-tertiary-container:  #FFD8E4;
+  --md-error:                  #F2B8B5;
+  --md-on-error:               #601410;
+  --md-error-container:        #8C1D18;
+  --md-on-error-container:     #F9DEDC;
+  --md-background:             #141218;
+  --md-on-background:          #E6E0E9;
+  --md-surface:                #141218;
+  --md-on-surface:             #E6E0E9;
+  --md-surface-variant:        #49454F;
+  --md-on-surface-variant:     #CAC4D0;
+  --md-outline:                #938F99;
+  --md-outline-variant:        #49454F;
+  --md-surf-0: #0F0D13;
+  --md-surf-1: #1D1B20;
+  --md-surf-2: #211F26;
+  --md-surf-3: #2B2930;
+  --md-surf-4: #302E37;
+  --md-surf-5: #36343B;
+  --color-maj: #FFB84D;
+  --color-min: #CAC4D0;
+  --color-dim: #F2B8B5;
+  --circle-selected-fill:  #4F378A;
+  --circle-fifth-fill:     #1A3B39;
+  --circle-fourth-fill:    #1B2F46;
+  --circle-minor-sel-fill: #4A4458;
+  --shape-xs:   4px;
+  --shape-sm:   8px;
+  --shape-md:   12px;
+  --shape-lg:   16px;
+  --shape-xl:   28px;
+  --shape-full: 9999px;
+  --font: system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { font-size: 16px; }
+html { font-size: 16px; scroll-behavior: smooth; }
 body {
-  background: var(--bg-base);
-  color: var(--text-primary);
-  font-family: var(--font-ui);
+  background: var(--md-background);
+  color: var(--md-on-background);
+  font-family: var(--font);
   min-height: 100vh;
   line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }
 
 .site-header {
-  background: var(--bg-surface);
-  border-bottom: 1px solid #1e1e30;
-  padding: 14px 24px;
+  background: var(--md-surf-1);
+  height: 64px;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: 20;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
 }
 .header-inner {
-  max-width: 1300px;
+  max-width: 1400px;
+  width: 100%;
   margin: 0 auto;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
 }
-.site-header h1 {
-  font-size: 1.2rem;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  color: var(--text-primary);
-}
+.site-header h1 { font-size: 22px; font-weight: 400; color: var(--md-on-surface); }
 .header-key {
-  font-size: 0.9rem;
-  color: var(--color-maj);
-  font-weight: 600;
-  letter-spacing: 0.03em;
+  font-size: 13px;
+  font-weight: 500;
+  background: var(--md-primary-container);
+  color: var(--md-on-primary-container);
+  padding: 4px 14px;
+  border-radius: var(--shape-full);
+  letter-spacing: 0.2px;
 }
 
 .layout {
   display: grid;
   grid-template-columns: 420px 1fr;
-  gap: 20px;
-  padding: 24px;
-  max-width: 1300px;
+  gap: 16px;
+  padding: 16px;
+  max-width: 1400px;
   margin: 0 auto;
   align-items: start;
 }
-
-@media (max-width: 900px) {
-  .layout { grid-template-columns: 1fr; }
-  .panel--circle { display: flex; justify-content: center; }
+@media (max-width: 1120px) {
+  .layout { grid-template-columns: 1fr; max-width: 660px; }
 }
 
 .panel {
-  background: var(--bg-surface);
-  border: 1px solid #1e1e30;
-  border-radius: var(--radius-lg);
+  background: var(--md-surf-1);
+  border-radius: var(--shape-xl);
   padding: 20px;
-  box-shadow: var(--shadow-panel);
+  border: 1px solid rgba(255,255,255,0.06);
 }
-
-.panel-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
+.panel-stack { display: flex; flex-direction: column; gap: 12px; }
 .panel-title {
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.1em;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 1.5px;
   text-transform: uppercase;
-  color: var(--text-muted);
-  margin-bottom: 14px;
+  color: var(--md-outline);
+  margin-bottom: 16px;
 }
 .panel-title span {
-  color: var(--color-maj);
+  color: var(--md-primary);
   text-transform: none;
-  letter-spacing: 0;
-  font-size: 0.85rem;
+  letter-spacing: 0.2px;
+  font-size: 14px;
+  font-weight: 500;
 }
-
-.placeholder {
-  color: var(--text-muted);
-  font-size: 0.85rem;
-  font-style: italic;
-}
+.placeholder { color: var(--md-on-surface-variant); font-size: 14px; font-style: italic; }
 
 .panel--circle {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 16px;
+  padding: 20px;
 }
+#circle-svg { max-width: 100%; height: auto; display: block; }
 
 .arc-major {
-  fill: var(--circle-default);
-  stroke: #242438;
-  stroke-width: 1.5;
-  cursor: pointer;
-  transition: fill 0.15s ease, filter 0.15s ease;
-}
-.arc-major:hover { fill: var(--bg-hover); }
-.arc-major.selected {
-  fill: var(--circle-selected);
-  filter: drop-shadow(0 0 10px rgba(124,58,237,0.7));
-}
-.arc-major.neighbor-fifth  { fill: #0c3d4d; }
-.arc-major.neighbor-fourth { fill: #0a3040; }
-
-.arc-minor {
-  fill: var(--circle-minor-default);
-  stroke: #1a1a2a;
+  fill: var(--md-surf-3);
+  stroke: rgba(255,255,255,0.05);
   stroke-width: 1;
   cursor: pointer;
-  transition: fill 0.15s ease;
+  transition: fill 0.18s ease;
 }
-.arc-minor:hover { fill: #181828; }
-.arc-minor.selected { fill: var(--circle-rel-minor); }
-.arc-minor.neighbor-fifth  { fill: #0a2a35; }
-.arc-minor.neighbor-fourth { fill: #08222c; }
-
+.arc-major:hover { fill: var(--md-surf-4); }
+.arc-major.selected {
+  fill: var(--circle-selected-fill);
+  filter: drop-shadow(0 0 10px rgba(208,188,255,0.45));
+}
+.arc-major.neighbor-fifth  { fill: var(--circle-fifth-fill); }
+.arc-major.neighbor-fourth { fill: var(--circle-fourth-fill); }
+.arc-minor {
+  fill: var(--md-surf-2);
+  stroke: rgba(255,255,255,0.03);
+  stroke-width: 0.5;
+  cursor: pointer;
+  transition: fill 0.18s ease;
+}
+.arc-minor:hover { fill: var(--md-surf-3); }
+.arc-minor.selected { fill: var(--circle-minor-sel-fill); }
+.arc-minor.neighbor-fifth  { fill: #12292A; }
+.arc-minor.neighbor-fourth { fill: #122036; }
 .arc-label-major {
-  fill: var(--text-primary);
-  font-size: 12px;
-  font-weight: 700;
-  font-family: var(--font-ui);
+  fill: var(--md-on-surface-variant);
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--font);
   text-anchor: middle;
   dominant-baseline: central;
   pointer-events: none;
   user-select: none;
+  transition: fill 0.18s;
 }
 .arc-label-minor {
-  fill: var(--text-secondary);
-  font-size: 8px;
+  fill: var(--md-outline);
+  font-size: 7.5px;
   font-weight: 500;
-  font-family: var(--font-ui);
+  font-family: var(--font);
   text-anchor: middle;
   dominant-baseline: central;
   pointer-events: none;
   user-select: none;
 }
-.arc-label-major.selected { fill: #ffffff; }
-.arc-label-minor.selected { fill: #e0d4ff; }
-
-.circle-center {
-  fill: #0d0d18;
-  stroke: #242438;
-  stroke-width: 1.5;
-}
+.arc-label-major.selected { fill: var(--md-on-primary-container); font-weight: 700; }
+.arc-label-minor.selected { fill: var(--md-on-secondary-container); }
+.circle-center { fill: var(--md-surf-0); stroke: rgba(255,255,255,0.06); stroke-width: 1; }
 .circle-center-text {
-  fill: var(--text-muted);
-  font-size: 8px;
-  font-family: var(--font-ui);
+  fill: var(--md-outline);
+  font-size: 7px;
+  font-family: var(--font);
   text-anchor: middle;
   dominant-baseline: central;
   pointer-events: none;
   user-select: none;
 }
 
-.chord-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 6px;
-}
-@media (max-width: 700px) {
-  .chord-grid { grid-template-columns: repeat(4, 1fr); }
-}
+.chord-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 8px; }
+@media (max-width: 660px) { .chord-grid { grid-template-columns: repeat(4,1fr); } }
+@media (max-width: 360px) { .chord-grid { grid-template-columns: repeat(3,1fr); } }
 
 .chord-card {
-  background: var(--bg-elevated);
-  border: 2px solid transparent;
-  border-radius: var(--radius-md);
-  padding: 10px 6px;
+  background: var(--md-surf-2);
+  border: 1.5px solid var(--md-outline-variant);
+  border-radius: var(--shape-md);
+  padding: 10px 6px 8px;
   cursor: pointer;
   text-align: center;
-  transition: border-color 0.15s, transform 0.1s, box-shadow 0.15s;
+  transition: background 0.15s, border-color 0.15s, transform 0.12s;
   position: relative;
 }
-.chord-card:hover {
-  border-color: var(--accent);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(124,58,237,0.2);
-}
-.chord-card.active { border-color: var(--color-maj); background: #1e1a0a; }
-
-.chord-roman {
-  display: block;
-  font-size: 0.62rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  margin-bottom: 4px;
-}
+.chord-card:hover { background: var(--md-surf-3); border-color: var(--md-primary); transform: translateY(-2px); }
+.chord-card.active { background: rgba(79,55,138,0.5); border-color: var(--md-primary); }
+.chord-roman { display: block; font-size: 10px; font-weight: 600; letter-spacing: 0.4px; margin-bottom: 4px; }
 .chord-card--maj .chord-roman { color: var(--color-maj); }
-.chord-card--min .chord-roman { color: var(--color-min); }
-.chord-card--dim .chord-roman { color: var(--color-dim); }
-
-.chord-name {
-  display: block;
-  font-size: 1rem;
-  font-weight: 700;
-  line-height: 1.1;
-  margin-bottom: 3px;
-}
-
-.chord-mode-name {
-  display: block;
-  font-size: 0.6rem;
-  color: var(--text-muted);
-  line-height: 1.2;
-}
-
+.chord-card--min .chord-roman { color: var(--md-secondary); }
+.chord-card--dim .chord-roman { color: var(--md-error); }
+.chord-name { display: block; font-size: 15px; font-weight: 700; color: var(--md-on-surface); line-height: 1.1; margin-bottom: 3px; }
+.chord-mode-name { display: block; font-size: 9px; color: var(--md-outline); line-height: 1.2; margin-bottom: 5px; }
 .btn-diagram {
   display: block;
   width: 100%;
-  margin-top: 6px;
-  padding: 3px 0;
-  background: #242438;
-  border: 1px solid #333355;
-  border-radius: var(--radius-sm);
-  color: var(--text-secondary);
-  font-size: 0.58rem;
-  letter-spacing: 0.05em;
+  padding: 4px 0;
+  background: transparent;
+  border: 1px solid var(--md-outline-variant);
+  border-radius: var(--shape-sm);
+  color: var(--md-on-surface-variant);
+  font-size: 9px;
+  font-family: var(--font);
+  font-weight: 500;
+  letter-spacing: 0.4px;
   cursor: pointer;
-  transition: background 0.1s, color 0.1s;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
-.btn-diagram:hover {
-  background: var(--accent);
-  color: #fff;
-  border-color: var(--accent);
-}
+.btn-diagram:hover { background: var(--md-primary-container); color: var(--md-on-primary-container); border-color: var(--md-primary); }
 
-.mode-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
+.mode-list { display: flex; flex-direction: column; gap: 6px; }
 .mode-row {
   display: flex;
-  gap: 12px;
+  gap: 14px;
   align-items: flex-start;
-  padding: 10px 12px;
-  background: var(--bg-elevated);
-  border-radius: var(--radius-md);
-  border-left: 3px solid var(--mode-color, #333);
+  padding: 12px 14px;
+  background: var(--md-surf-2);
+  border-radius: var(--shape-lg);
+  border-left: 3px solid var(--mode-color, var(--md-outline-variant));
+  transition: background 0.15s;
 }
+.mode-row:hover { background: var(--md-surf-3); }
+.mode-meta { flex-shrink: 0; min-width: 60px; }
+.mode-chord-name { font-weight: 700; font-size: 15px; color: var(--md-on-surface); display: block; line-height: 1.2; }
+.mode-roman { font-size: 10px; color: var(--md-outline); font-weight: 500; display: block; }
+.mode-info { flex: 1; min-width: 0; }
+.mode-name { font-size: 12px; font-weight: 600; color: var(--md-on-surface-variant); display: block; margin-bottom: 2px; }
+.mode-desc { font-size: 12px; color: var(--md-outline); line-height: 1.55; }
 
-.mode-meta { flex-shrink: 0; min-width: 72px; }
-.mode-chord-name { font-weight: 700; font-size: 0.95rem; display: block; line-height: 1.2; }
-.mode-roman { font-size: 0.65rem; color: var(--text-muted); display: block; }
-.mode-info { flex: 1; }
-.mode-name { font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 2px; }
-.mode-desc { font-size: 0.72rem; color: var(--text-muted); line-height: 1.4; }
-
-.progression-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 14px;
-}
+.progression-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; gap: 8px; }
 .progression-header .panel-title { margin-bottom: 0; }
 .progression-actions { display: flex; gap: 8px; }
-
 .btn {
-  padding: 5px 12px;
-  border-radius: var(--radius-sm);
-  font-size: 0.75rem;
-  font-weight: 600;
+  height: 36px;
+  padding: 0 16px;
+  border-radius: var(--shape-full);
+  font-size: 14px;
+  font-weight: 500;
+  font-family: var(--font);
   cursor: pointer;
-  border: 1px solid transparent;
-  transition: background 0.1s, opacity 0.1s;
+  border: none;
+  letter-spacing: 0.1px;
+  white-space: nowrap;
+  transition: background 0.15s;
+  display: inline-flex;
+  align-items: center;
 }
-.btn--ghost { background: transparent; border-color: #333355; color: var(--text-secondary); }
-.btn--ghost:hover { border-color: var(--accent); color: var(--text-primary); }
-.btn--danger { background: transparent; border-color: #4a1a1a; color: var(--danger); }
-.btn--danger:hover { background: var(--danger); color: #fff; }
+.btn--ghost { background: transparent; border: 1px solid var(--md-outline); color: var(--md-primary); }
+.btn--ghost:hover { background: rgba(208,188,255,0.08); border-color: var(--md-primary); }
+.btn--danger { background: var(--md-error-container); color: var(--md-on-error-container); }
+.btn--danger:hover { background: #A32727; color: #fff; }
 
-.progression-slots {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  min-height: 62px;
-  align-items: flex-start;
-}
-
+.progression-slots { display: flex; gap: 8px; flex-wrap: wrap; min-height: 52px; align-items: center; }
 .prog-slot {
-  width: 68px;
-  min-height: 58px;
-  border-radius: var(--radius-md);
+  min-width: 52px;
+  height: 52px;
+  border-radius: var(--shape-md);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
+  gap: 2px;
   position: relative;
-  font-size: 0.8rem;
 }
-.prog-slot--empty { border: 2px dashed #2a2a3f; background: transparent; }
-.prog-slot--filled { background: var(--bg-elevated); border: 2px solid #333355; cursor: pointer; }
-.prog-slot--filled:hover { border-color: var(--danger); }
-.prog-slot--filled:hover .prog-remove { opacity: 1; }
-.prog-slot--maj { border-color: #3a2a00 !important; }
-.prog-slot--maj:hover { border-color: var(--danger) !important; }
-.prog-slot--min { border-color: #2a2a3a !important; }
-.prog-slot--min:hover { border-color: var(--danger) !important; }
-.prog-slot--dim { border-color: #2a1010 !important; }
-.prog-slot--dim:hover { border-color: var(--danger) !important; }
-
-.prog-roman { font-size: 0.6rem; color: var(--text-muted); font-weight: 600; }
-.prog-name { font-weight: 700; font-size: 0.9rem; }
-.prog-slot--maj .prog-name { color: var(--color-maj); }
-.prog-slot--min .prog-name { color: var(--text-secondary); }
-.prog-slot--dim .prog-name { color: var(--color-dim); }
-
-.prog-remove {
-  position: absolute;
-  top: -7px; right: -7px;
-  width: 18px; height: 18px;
-  border-radius: 50%;
-  background: var(--danger);
-  color: #fff;
-  border: none;
+.prog-slot--empty { width: 52px; border: 2px dashed rgba(255,255,255,0.08); }
+.prog-slot--filled {
+  padding: 0 12px;
+  background: var(--md-surf-3);
+  border: 1.5px solid var(--md-outline-variant);
   cursor: pointer;
-  font-size: 11px;
-  line-height: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity 0.15s;
+  transition: border-color 0.15s;
 }
-
-.progression-hint { font-size: 0.72rem; color: var(--text-muted); font-style: italic; margin-top: 10px; }
+.prog-slot--filled:hover { border-color: var(--md-error); }
+.prog-slot--filled:hover .prog-remove { opacity: 1; }
+.prog-slot--maj.prog-slot--filled { border-color: rgba(255,184,77,0.35); background: rgba(255,184,77,0.07); }
+.prog-slot--dim.prog-slot--filled { border-color: rgba(242,184,181,0.35); background: rgba(242,184,181,0.06); }
+.prog-roman { font-size: 10px; color: var(--md-outline); font-weight: 500; line-height: 1; }
+.prog-name  { font-weight: 700; font-size: 14px; line-height: 1.1; }
+.prog-slot--maj .prog-name { color: var(--color-maj); }
+.prog-slot--min .prog-name { color: var(--md-on-surface-variant); }
+.prog-slot--dim .prog-name { color: var(--md-error); }
+.prog-remove {
+  position: absolute; top: -8px; right: -8px;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: var(--md-error-container);
+  color: var(--md-on-error-container);
+  border: none; cursor: pointer;
+  font-size: 13px;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity 0.15s;
+}
+.progression-hint { font-size: 12px; color: var(--md-outline); font-style: italic; margin-top: 12px; }
 
 .modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.75);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  backdrop-filter: blur(4px);
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(8px);
   z-index: 100;
 }
 .modal-overlay[hidden] { display: none; }
-
 .modal {
-  background: var(--bg-surface);
-  border: 1px solid #2a2a40;
-  border-radius: var(--radius-lg);
-  padding: 28px 32px;
-  min-width: 220px;
+  background: var(--md-surf-3);
+  border-radius: var(--shape-xl);
+  padding: 24px 28px 28px;
+  min-width: 240px;
   text-align: center;
   position: relative;
-  box-shadow: var(--glow-violet), var(--shadow-panel);
-  animation: modal-in 0.18s ease;
+  border: 1px solid rgba(255,255,255,0.07);
+  box-shadow: 0 8px 48px rgba(0,0,0,0.55);
+  animation: modal-in 0.22s cubic-bezier(0.2,0,0,1);
 }
-@keyframes modal-in {
-  from { opacity: 0; transform: scale(0.92) translateY(8px); }
-  to   { opacity: 1; transform: scale(1) translateY(0); }
-}
-
+@keyframes modal-in { from { opacity:0; transform:scale(0.88); } to { opacity:1; transform:scale(1); } }
 .modal-close {
-  position: absolute;
-  top: 12px; right: 14px;
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  font-size: 1.4rem;
-  cursor: pointer;
-  line-height: 1;
-  transition: color 0.1s;
+  position: absolute; top: 10px; right: 12px;
+  background: transparent; border: none;
+  color: var(--md-on-surface-variant);
+  font-size: 22px; cursor: pointer;
+  width: 40px; height: 40px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  transition: background 0.15s, color 0.15s;
 }
-.modal-close:hover { color: var(--text-primary); }
-.modal-title { font-size: 1.6rem; font-weight: 800; margin-bottom: 4px; }
-.modal-subtitle { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 20px; }
-.diagram-container { display: flex; justify-content: center; margin: 0 auto 10px; }
-.diagram-lefty-note { font-size: 0.65rem; color: var(--text-muted); font-style: italic; margin-top: 8px; }
-
-.fret-line        { stroke: #2a2a44; stroke-width: 1; }
-.fret-line--nut   { stroke: #888; stroke-width: 3; }
-.string-line      { stroke: #3a3a55; stroke-width: 1; }
-.fret-dot         { fill: var(--accent); }
-.dot-open         { fill: none; stroke: #888; stroke-width: 1.5; }
-.dot-mute-line    { stroke: #666; stroke-width: 1.5; stroke-linecap: round; }
-.barre-bar        { stroke: var(--accent); stroke-width: 10; stroke-linecap: round; opacity: 0.75; }
-.fret-number      { fill: var(--text-muted); font-size: 9px; font-family: var(--font-ui); }
+.modal-close:hover { background: rgba(255,255,255,0.08); color: var(--md-on-surface); }
+.modal-title { font-size: 36px; font-weight: 700; color: var(--md-primary); margin-bottom: 4px; letter-spacing: -0.5px; }
+.modal-subtitle { font-size: 11px; font-weight: 500; color: var(--md-outline); text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 20px; }
+.diagram-container { display: flex; justify-content: center; margin: 0 auto 2px; }
+.diagram-lefty-note { font-size: 11px; color: var(--md-outline); font-style: italic; margin-top: 10px; }
+.fret-line        { stroke: rgba(255,255,255,0.12); stroke-width: 1; }
+.fret-line--nut   { stroke: var(--md-on-surface-variant); stroke-width: 3; }
+.string-line      { stroke: rgba(255,255,255,0.14); stroke-width: 1; }
+.fret-dot         { fill: var(--md-primary); }
+.dot-open         { fill: none; stroke: var(--md-on-surface-variant); stroke-width: 1.5; }
+.dot-mute-line    { stroke: var(--md-outline); stroke-width: 1.5; stroke-linecap: round; }
+.barre-bar        { stroke: var(--md-primary); stroke-width: 10; stroke-linecap: round; opacity: 0.8; }
+.fret-number      { fill: var(--md-outline); font-size: 9px; font-family: var(--font); }
   </style>
 </head>
 <body>
@@ -441,7 +375,7 @@ body {
   <header class="site-header">
     <div class="header-inner">
       <h1>Circle of Fifths</h1>
-      <span class="header-key" id="header-key">— select a key —</span>
+      <span class="header-key" id="header-key">select a key</span>
     </div>
   </header>
 
@@ -449,7 +383,6 @@ body {
     <section class="panel panel--circle">
       <svg id="circle-svg" viewBox="-200 -200 400 400" width="400" height="400" aria-label="Circle of Fifths"></svg>
     </section>
-
     <div class="panel-stack">
       <section class="panel panel--chords">
         <h2 class="panel-title">Diatonic Chords <span id="key-label"></span></h2>
@@ -457,14 +390,12 @@ body {
           <p class="placeholder">Click a key on the circle to see its chords.</p>
         </div>
       </section>
-
       <section class="panel panel--modes">
         <h2 class="panel-title">Mode Explorer</h2>
         <div class="mode-list" id="mode-list">
           <p class="placeholder">Select a key to explore its modes.</p>
         </div>
       </section>
-
       <section class="panel panel--progression">
         <div class="progression-header">
           <h2 class="panel-title">Progression Builder</h2>
@@ -481,173 +412,124 @@ body {
 
   <div class="modal-overlay" id="modal-overlay" hidden>
     <div class="modal" id="modal-chord" role="dialog" aria-modal="true">
-      <button class="modal-close" id="modal-close" aria-label="Close">×</button>
+      <button class="modal-close" id="modal-close" aria-label="Close">&#x2715;</button>
       <h3 class="modal-title" id="modal-title"></h3>
       <p class="modal-subtitle" id="modal-subtitle"></p>
       <div class="diagram-container">
         <svg id="diagram-svg" viewBox="0 0 130 170" width="130" height="170"></svg>
       </div>
-      <p class="diagram-lefty-note">Left-handed diagram (low E on right)</p>
+      <p class="diagram-lefty-note">Left-handed &middot; low E on right</p>
     </div>
   </div>
 
-  <script>
-    var AppState = { currentKey: null, currentKeyIndex: null, currentChords: [] };
-  </script>
+  <script>var AppState={currentKey:null,currentKeyIndex:null,currentChords:[]};</script>
 
   <script>
 /* theory.js */
-var CIRCLE = ['C','G','D','A','E','B','F#','Db','Ab','Eb','Bb','F'];
-var REL_MINORS = ['Am','Em','Bm','F#m','C#m','G#m','D#m','Bbm','Fm','Cm','Gm','Dm'];
-var CHROMATIC      = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
-var FLAT_CHROMATIC = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
-var FLAT_KEYS = ['F','Bb','Eb','Ab','Db','Gb'];
-var MAJOR_INTERVALS = [0, 2, 4, 5, 7, 9, 11];
-var QUALITIES = ['maj','min','min','maj','maj','min','dim'];
-var ROMANS = ['I','ii','iii','IV','V','vi','vii°'];
-var MODE_NAMES = ['Ionian','Dorian','Phrygian','Lydian','Mixolydian','Aeolian','Locrian'];
-var MODE_COLORS = ['#f59e0b','#3b82f6','#ef4444','#a78bfa','#f97316','#6b7280','#1f2937'];
-var MODE_FEEL = {
-  'Ionian':     'Bright, happy, resolved. The home base of Western music. Every major key song lives here.',
-  'Dorian':     'Minor with a raised 6th. Soulful, funky, sophisticated. Santana, Miles Davis. Use over ii chord.',
-  'Phrygian':   'Minor with a \u266d2nd. Dark, exotic, Spanish/metal. Heavy and mysterious. Djent and flamenco territory.',
-  'Lydian':     'Major with a \u266f4th. Dreamy, floating, ethereal. Joe Satriani lives here. Perfect for ambient passages.',
-  'Mixolydian': "Major with a \u266d7th. Bluesy rock, dominant energy. Classic rock's home. Stairway to Heaven verse.",
-  'Aeolian':    'Natural minor. Sad, emotional, introspective. Most expressive for dark moods. Most rock ballads.',
-  'Locrian':    'Diminished root. Unstable, dissonant, barely resolved. Use sparingly for maximum tension and drama.'
+var CIRCLE=['C','G','D','A','E','B','F#','Db','Ab','Eb','Bb','F'];
+var REL_MINORS=['Am','Em','Bm','F#m','C#m','G#m','D#m','Bbm','Fm','Cm','Gm','Dm'];
+var CHROMATIC=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+var FLAT_CHROMATIC=['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
+var FLAT_KEYS=['F','Bb','Eb','Ab','Db','Gb'];
+var MAJOR_INTERVALS=[0,2,4,5,7,9,11];
+var QUALITIES=['maj','min','min','maj','maj','min','dim'];
+var ROMANS=['I','ii','iii','IV','V','vi','vii\u00b0'];
+var MODE_NAMES=['Ionian','Dorian','Phrygian','Lydian','Mixolydian','Aeolian','Locrian'];
+var MODE_COLORS=['#f59e0b','#3b82f6','#ef4444','#a78bfa','#f97316','#6b7280','#1f2937'];
+var MODE_FEEL={
+  'Ionian':'Bright, happy, resolved. The home base of Western music. Every major key song lives here.',
+  'Dorian':'Minor with a raised 6th. Soulful, funky, sophisticated. Santana, Miles Davis. Use over ii chord.',
+  'Phrygian':'Minor with a \u266d2nd. Dark, exotic, Spanish/metal. Heavy and mysterious. Djent and flamenco territory.',
+  'Lydian':'Major with a \u266f4th. Dreamy, floating, ethereal. Joe Satriani lives here. Perfect for ambient passages.',
+  'Mixolydian':"Major with a \u266d7th. Bluesy rock, dominant energy. Classic rock's home. Stairway to Heaven verse.",
+  'Aeolian':'Natural minor. Sad, emotional, introspective. Most expressive for dark moods. Most rock ballads.',
+  'Locrian':'Diminished root. Unstable, dissonant, barely resolved. Use sparingly for maximum tension and drama.'
 };
-function normalizeKey(key) {
-  var m = {'Db':'C#','Eb':'D#','Fb':'E','Gb':'F#','Ab':'G#','Bb':'A#','Cb':'B'};
-  return m[key] !== undefined ? m[key] : key;
-}
-function noteNameForKey(idx, keyRoot) {
-  return FLAT_KEYS.indexOf(keyRoot) !== -1 ? FLAT_CHROMATIC[idx] : CHROMATIC[idx];
-}
-function getDiatonicChords(key) {
-  var norm = normalizeKey(key);
-  var rootIdx = CHROMATIC.indexOf(norm);
-  if (rootIdx === -1) return [];
-  return MAJOR_INTERVALS.map(function(interval, degree) {
-    var noteIdx  = (rootIdx + interval) % 12;
-    var rootNote = noteNameForKey(noteIdx, key);
-    var quality  = QUALITIES[degree];
-    var chordName = quality === 'min' ? rootNote + 'm' : quality === 'dim' ? rootNote + '\u00b0' : rootNote;
-    var voicingKey = quality === 'dim' ? rootNote + 'dim' : chordName;
-    return { degree: degree+1, roman: ROMANS[degree], chordName: chordName, rootNote: rootNote,
-             quality: quality, modeIndex: degree, modeName: MODE_NAMES[degree],
-             modeDescription: MODE_FEEL[MODE_NAMES[degree]], modeColor: MODE_COLORS[degree], voicingKey: voicingKey };
+function normalizeKey(k){var m={'Db':'C#','Eb':'D#','Fb':'E','Gb':'F#','Ab':'G#','Bb':'A#','Cb':'B'};return m[k]!==undefined?m[k]:k;}
+function noteNameForKey(i,k){return FLAT_KEYS.indexOf(k)!==-1?FLAT_CHROMATIC[i]:CHROMATIC[i];}
+function getDiatonicChords(key){
+  var n=normalizeKey(key),ri=CHROMATIC.indexOf(n);if(ri===-1)return[];
+  return MAJOR_INTERVALS.map(function(iv,d){
+    var ni=(ri+iv)%12,rn=noteNameForKey(ni,key),q=QUALITIES[d];
+    var cn=q==='min'?rn+'m':q==='dim'?rn+'\u00b0':rn;
+    var vk=q==='dim'?rn+'dim':cn;
+    return{degree:d+1,roman:ROMANS[d],chordName:cn,rootNote:rn,quality:q,modeIndex:d,
+           modeName:MODE_NAMES[d],modeDescription:MODE_FEEL[MODE_NAMES[d]],modeColor:MODE_COLORS[d],voicingKey:vk};
   });
 }
-function getNeighborIndices(i) { return { fifth: (i+1)%12, fourth: (i+11)%12 }; }
+function getNeighborIndices(i){return{fifth:(i+1)%12,fourth:(i+11)%12};}
   </script>
 
   <script>
 /* voicings.js */
-var VOICINGS = {
-  'C':  { frets: [-1,3,2,0,1,0], baseFret: 1 },
-  'G':  { frets: [3,2,0,0,0,3],  baseFret: 1 },
-  'D':  { frets: [-1,-1,0,2,3,2],baseFret: 1 },
-  'A':  { frets: [-1,0,2,2,2,0], baseFret: 1 },
-  'E':  { frets: [0,2,2,1,0,0],  baseFret: 1 },
-  'F':  { frets: [1,3,3,2,1,1],  baseFret: 1 },
-  'B':  { frets: [-1,2,4,4,4,2], baseFret: 2 },
-  'F#': { frets: [2,4,4,3,2,2],  baseFret: 2 },
-  'Gb': { frets: [2,4,4,3,2,2],  baseFret: 2 },
-  'Db': { frets: [-1,4,6,6,6,4], baseFret: 4 },
-  'Ab': { frets: [4,6,6,5,4,4],  baseFret: 4 },
-  'Eb': { frets: [-1,6,8,8,8,6], baseFret: 6 },
-  'Bb': { frets: [-1,1,3,3,3,1], baseFret: 1 },
-  'Am': { frets: [-1,0,2,2,1,0], baseFret: 1 },
-  'Em': { frets: [0,2,2,0,0,0],  baseFret: 1 },
-  'Dm': { frets: [-1,-1,0,2,3,1],baseFret: 1 },
-  'Fm': { frets: [1,3,3,1,1,1],  baseFret: 1 },
-  'Bm': { frets: [-1,2,4,4,3,2], baseFret: 2 },
-  'F#m':{ frets: [2,4,4,2,2,2],  baseFret: 2 },
-  'Gbm':{ frets: [2,4,4,2,2,2],  baseFret: 2 },
-  'C#m':{ frets: [-1,4,6,6,5,4], baseFret: 4 },
-  'Dbm':{ frets: [-1,4,6,6,5,4], baseFret: 4 },
-  'G#m':{ frets: [4,6,6,4,4,4],  baseFret: 4 },
-  'Abm':{ frets: [4,6,6,4,4,4],  baseFret: 4 },
-  'D#m':{ frets: [-1,6,8,8,7,6], baseFret: 6 },
-  'Ebm':{ frets: [-1,6,8,8,7,6], baseFret: 6 },
-  'Bbm':{ frets: [-1,1,3,3,2,1], baseFret: 1 },
-  'Cm': { frets: [-1,3,5,5,4,3], baseFret: 3 },
-  'Gm': { frets: [3,5,5,3,3,3],  baseFret: 3 },
-  'Bdim':  { frets: [-1,2,3,4,3,-1], baseFret: 1 },
-  'F#dim': { frets: [2,3,4,2,-1,-1], baseFret: 2 },
-  'C#dim': { frets: [-1,4,5,3,5,-1], baseFret: 3 },
-  'G#dim': { frets: [-1,0,1,2,1,-1], baseFret: 1 },
-  'D#dim': { frets: [-1,1,2,3,2,-1], baseFret: 1 },
-  'A#dim': { frets: [-1,1,2,0,2,-1], baseFret: 1 },
-  'Edim':  { frets: [0,1,2,0,-1,-1], baseFret: 1 },
-  'Cdim':  { frets: [-1,3,4,5,4,-1], baseFret: 3 },
-  'Gdim':  { frets: [-1,-1,5,6,5,-1],baseFret: 5 },
-  'Ddim':  { frets: [-1,-1,0,1,0,-1],baseFret: 1 },
-  'Adim':  { frets: [-1,0,1,2,1,-1], baseFret: 1 },
-  'Fdim':  { frets: [1,2,3,1,-1,-1], baseFret: 1 },
-  'Gbdim': { frets: [2,3,4,2,-1,-1], baseFret: 2 },
-  'Dbdim': { frets: [-1,4,5,3,5,-1], baseFret: 3 },
-  'Abdim': { frets: [-1,0,1,2,1,-1], baseFret: 1 },
-  'Ebdim': { frets: [-1,1,2,3,2,-1], baseFret: 1 },
-  'Bbdim': { frets: [-1,1,2,0,2,-1], baseFret: 1 },
+var VOICINGS={
+  'C':{frets:[-1,3,2,0,1,0],baseFret:1},'G':{frets:[3,2,0,0,0,3],baseFret:1},
+  'D':{frets:[-1,-1,0,2,3,2],baseFret:1},'A':{frets:[-1,0,2,2,2,0],baseFret:1},
+  'E':{frets:[0,2,2,1,0,0],baseFret:1},'F':{frets:[1,3,3,2,1,1],baseFret:1},
+  'B':{frets:[-1,2,4,4,4,2],baseFret:2},'F#':{frets:[2,4,4,3,2,2],baseFret:2},
+  'Gb':{frets:[2,4,4,3,2,2],baseFret:2},'Db':{frets:[-1,4,6,6,6,4],baseFret:4},
+  'Ab':{frets:[4,6,6,5,4,4],baseFret:4},'Eb':{frets:[-1,6,8,8,8,6],baseFret:6},
+  'Bb':{frets:[-1,1,3,3,3,1],baseFret:1},'Am':{frets:[-1,0,2,2,1,0],baseFret:1},
+  'Em':{frets:[0,2,2,0,0,0],baseFret:1},'Dm':{frets:[-1,-1,0,2,3,1],baseFret:1},
+  'Fm':{frets:[1,3,3,1,1,1],baseFret:1},'Bm':{frets:[-1,2,4,4,3,2],baseFret:2},
+  'F#m':{frets:[2,4,4,2,2,2],baseFret:2},'Gbm':{frets:[2,4,4,2,2,2],baseFret:2},
+  'C#m':{frets:[-1,4,6,6,5,4],baseFret:4},'Dbm':{frets:[-1,4,6,6,5,4],baseFret:4},
+  'G#m':{frets:[4,6,6,4,4,4],baseFret:4},'Abm':{frets:[4,6,6,4,4,4],baseFret:4},
+  'D#m':{frets:[-1,6,8,8,7,6],baseFret:6},'Ebm':{frets:[-1,6,8,8,7,6],baseFret:6},
+  'Bbm':{frets:[-1,1,3,3,2,1],baseFret:1},'Cm':{frets:[-1,3,5,5,4,3],baseFret:3},
+  'Gm':{frets:[3,5,5,3,3,3],baseFret:3},
+  'Bdim':{frets:[-1,2,3,4,3,-1],baseFret:1},'F#dim':{frets:[2,3,4,2,-1,-1],baseFret:2},
+  'C#dim':{frets:[-1,4,5,3,5,-1],baseFret:3},'G#dim':{frets:[-1,0,1,2,1,-1],baseFret:1},
+  'D#dim':{frets:[-1,1,2,3,2,-1],baseFret:1},'A#dim':{frets:[-1,1,2,0,2,-1],baseFret:1},
+  'Edim':{frets:[0,1,2,0,-1,-1],baseFret:1},'Cdim':{frets:[-1,3,4,5,4,-1],baseFret:3},
+  'Gdim':{frets:[-1,-1,5,6,5,-1],baseFret:5},'Ddim':{frets:[-1,-1,0,1,0,-1],baseFret:1},
+  'Adim':{frets:[-1,0,1,2,1,-1],baseFret:1},'Fdim':{frets:[1,2,3,1,-1,-1],baseFret:1},
+  'Gbdim':{frets:[2,3,4,2,-1,-1],baseFret:2},'Dbdim':{frets:[-1,4,5,3,5,-1],baseFret:3},
+  'Abdim':{frets:[-1,0,1,2,1,-1],baseFret:1},'Ebdim':{frets:[-1,1,2,3,2,-1],baseFret:1},
+  'Bbdim':{frets:[-1,1,2,0,2,-1],baseFret:1}
 };
-function getVoicing(key) {
-  if (VOICINGS[key]) return VOICINGS[key];
-  var c = key.replace('\u00b0','dim');
-  if (VOICINGS[c]) return VOICINGS[c];
-  return { frets: [-1,-1,-1,-1,-1,-1], baseFret: 1 };
-}
-function mirrorForLefty(frets) { return frets.slice().reverse(); }
+function getVoicing(k){if(VOICINGS[k])return VOICINGS[k];var c=k.replace('\u00b0','dim');if(VOICINGS[c])return VOICINGS[c];return{frets:[-1,-1,-1,-1,-1,-1],baseFret:1};}
+function mirrorForLefty(f){return f.slice().reverse();}
   </script>
 
   <script>
 /* circle.js */
-var CIRCLE_OUTER_R=175, CIRCLE_MID_R=118, CIRCLE_INNER_R=66, CIRCLE_LABEL_MAJ=147, CIRCLE_LABEL_MIN=92;
-function deg2rad(d){return d*Math.PI/180;}
-function polarToXY(r,a){var rad=deg2rad(a);return{x:r*Math.cos(rad),y:r*Math.sin(rad)};}
-function createArcPath(innerR,outerR,s,e){
-  var p1=polarToXY(outerR,s),p2=polarToXY(outerR,e),p3=polarToXY(innerR,e),p4=polarToXY(innerR,s);
-  var d=['M',p1.x,p1.y,'A',outerR,outerR,0,0,1,p2.x,p2.y,'L',p3.x,p3.y,'A',innerR,innerR,0,0,0,p4.x,p4.y,'Z'].join(' ');
+var CR_OUT=175,CR_MID=118,CR_IN=66,CR_LM=147,CR_LN=92;
+function d2r(d){return d*Math.PI/180;}
+function p2xy(r,a){var rd=d2r(a);return{x:r*Math.cos(rd),y:r*Math.sin(rd)};}
+function arcPath(ir,or,s,e){
+  var a=p2xy(or,s),b=p2xy(or,e),c=p2xy(ir,e),dd=p2xy(ir,s);
   var path=document.createElementNS('http://www.w3.org/2000/svg','path');
-  path.setAttribute('d',d);return path;
+  path.setAttribute('d',['M',a.x,a.y,'A',or,or,0,0,1,b.x,b.y,'L',c.x,c.y,'A',ir,ir,0,0,0,dd.x,dd.y,'Z'].join(' '));
+  return path;
 }
-function createArcLabel(r,a,text,cls){
-  var pos=polarToXY(r,a);
-  var el=document.createElementNS('http://www.w3.org/2000/svg','text');
-  el.setAttribute('x',pos.x);el.setAttribute('y',pos.y);el.setAttribute('class',cls);el.textContent=text;return el;
+function arcLabel(r,a,t,cls){
+  var p=p2xy(r,a),el=document.createElementNS('http://www.w3.org/2000/svg','text');
+  el.setAttribute('x',p.x);el.setAttribute('y',p.y);el.setAttribute('class',cls);el.textContent=t;return el;
 }
-function initCircle(svgEl){
-  while(svgEl.firstChild)svgEl.removeChild(svgEl.firstChild);
+function initCircle(svg){
+  while(svg.firstChild)svg.removeChild(svg.firstChild);
   var hub=document.createElementNS('http://www.w3.org/2000/svg','circle');
-  hub.setAttribute('r',CIRCLE_INNER_R);hub.setAttribute('cx',0);hub.setAttribute('cy',0);hub.setAttribute('class','circle-center');
-  svgEl.appendChild(hub);
+  hub.setAttribute('r',CR_IN);hub.setAttribute('cx',0);hub.setAttribute('cy',0);hub.setAttribute('class','circle-center');svg.appendChild(hub);
   var ht=document.createElementNS('http://www.w3.org/2000/svg','text');
-  ht.setAttribute('x',0);ht.setAttribute('y',0);ht.setAttribute('class','circle-center-text');ht.textContent='5ths';svgEl.appendChild(ht);
+  ht.setAttribute('x',0);ht.setAttribute('y',0);ht.setAttribute('class','circle-center-text');ht.textContent='5ths';svg.appendChild(ht);
   for(var i=0;i<12;i++){
-    var mid=i*30-90,start=mid-15,end=mid+15;
-    var ma=createArcPath(CIRCLE_MID_R,CIRCLE_OUTER_R,start,end);
-    ma.setAttribute('class','arc-major');ma.dataset.index=i;ma.dataset.key=CIRCLE[i];ma.dataset.ringType='major';svgEl.appendChild(ma);
-    var ml=createArcLabel(CIRCLE_LABEL_MAJ,mid,CIRCLE[i],'arc-label-major');
-    ml.dataset.index=i;ml.dataset.ringType='major';svgEl.appendChild(ml);
-    var na=createArcPath(CIRCLE_INNER_R,CIRCLE_MID_R,start,end);
-    na.setAttribute('class','arc-minor');na.dataset.index=i;na.dataset.key=REL_MINORS[i];na.dataset.ringType='minor';svgEl.appendChild(na);
-    var nl=createArcLabel(CIRCLE_LABEL_MIN,mid,REL_MINORS[i],'arc-label-minor');
-    nl.dataset.index=i;nl.dataset.ringType='minor';svgEl.appendChild(nl);
+    var mid=i*30-90,s=mid-15,e=mid+15;
+    var ma=arcPath(CR_MID,CR_OUT,s,e);ma.setAttribute('class','arc-major');ma.dataset.index=i;ma.dataset.key=CIRCLE[i];ma.dataset.ringType='major';svg.appendChild(ma);
+    var ml=arcLabel(CR_LM,mid,CIRCLE[i],'arc-label-major');ml.dataset.index=i;ml.dataset.ringType='major';svg.appendChild(ml);
+    var na=arcPath(CR_IN,CR_MID,s,e);na.setAttribute('class','arc-minor');na.dataset.index=i;na.dataset.key=REL_MINORS[i];na.dataset.ringType='minor';svg.appendChild(na);
+    var nl=arcLabel(CR_LN,mid,REL_MINORS[i],'arc-label-minor');nl.dataset.index=i;nl.dataset.ringType='minor';svg.appendChild(nl);
   }
-  svgEl.addEventListener('click',function(e){
-    var t=e.target,idx=t.dataset&&t.dataset.index;
-    if(idx===undefined||idx===null||idx==='')return;
-    selectKey(svgEl,parseInt(idx,10));
-  });
+  svg.addEventListener('click',function(ev){var t=ev.target,ix=t.dataset&&t.dataset.index;if(ix===undefined||ix===null||ix==='')return;selectKey(svg,parseInt(ix,10));});
 }
-function selectKey(svgEl,circleIndex){
-  var nb=getNeighborIndices(circleIndex);
-  svgEl.querySelectorAll('.arc-major,.arc-label-major').forEach(function(el){el.classList.remove('selected','neighbor-fifth','neighbor-fourth');});
-  svgEl.querySelectorAll('.arc-minor,.arc-label-minor').forEach(function(el){el.classList.remove('selected','neighbor-fifth','neighbor-fourth');});
-  svgEl.querySelectorAll('[data-index="'+circleIndex+'"]').forEach(function(el){el.classList.add('selected');});
-  svgEl.querySelectorAll('[data-index="'+nb.fifth+'"].arc-major,[data-index="'+nb.fifth+'"].arc-label-major').forEach(function(el){el.classList.add('neighbor-fifth');});
-  svgEl.querySelectorAll('[data-index="'+nb.fourth+'"].arc-major,[data-index="'+nb.fourth+'"].arc-label-major').forEach(function(el){el.classList.add('neighbor-fourth');});
-  svgEl.dispatchEvent(new CustomEvent('keySelected',{detail:{circleIndex:circleIndex,key:CIRCLE[circleIndex]},bubbles:true}));
+function selectKey(svg,ci){
+  var nb=getNeighborIndices(ci);
+  svg.querySelectorAll('.arc-major,.arc-label-major').forEach(function(el){el.classList.remove('selected','neighbor-fifth','neighbor-fourth');});
+  svg.querySelectorAll('.arc-minor,.arc-label-minor').forEach(function(el){el.classList.remove('selected','neighbor-fifth','neighbor-fourth');});
+  svg.querySelectorAll('[data-index="'+ci+'"]').forEach(function(el){el.classList.add('selected');});
+  svg.querySelectorAll('[data-index="'+nb.fifth+'"].arc-major,[data-index="'+nb.fifth+'"].arc-label-major').forEach(function(el){el.classList.add('neighbor-fifth');});
+  svg.querySelectorAll('[data-index="'+nb.fourth+'"].arc-major,[data-index="'+nb.fourth+'"].arc-label-major').forEach(function(el){el.classList.add('neighbor-fourth');});
+  svg.dispatchEvent(new CustomEvent('keySelected',{detail:{circleIndex:ci,key:CIRCLE[ci]},bubbles:true}));
 }
   </script>
 
@@ -657,27 +539,24 @@ function renderChordGrid(chords,keyName){
   var grid=document.getElementById('chord-grid');
   document.getElementById('key-label').textContent='\u2014 '+keyName+' Major';
   grid.innerHTML='';
-  chords.forEach(function(chord,idx){
+  chords.forEach(function(ch,idx){
     var card=document.createElement('div');
-    card.className='chord-card chord-card--'+chord.quality;
+    card.className='chord-card chord-card--'+ch.quality;
     card.dataset.chordIndex=idx;
-    card.title=chord.modeName+': '+chord.modeDescription;
-    card.innerHTML='<span class="chord-roman">'+chord.roman+'</span>'+
-      '<span class="chord-name">'+chord.chordName+'</span>'+
-      '<span class="chord-mode-name">'+chord.modeName+'</span>'+
-      '<button class="btn-diagram" data-voicing-key="'+chord.voicingKey+'" data-chord-name="'+chord.chordName+'" data-mode-name="'+chord.modeName+'" data-quality="'+chord.quality+'">Diagram</button>';
+    card.title=ch.modeName+': '+ch.modeDescription;
+    card.innerHTML='<span class="chord-roman">'+ch.roman+'</span>'+
+      '<span class="chord-name">'+ch.chordName+'</span>'+
+      '<span class="chord-mode-name">'+ch.modeName+'</span>'+
+      '<button class="btn-diagram" data-voicing-key="'+ch.voicingKey+'" data-chord-name="'+ch.chordName+'" data-mode-name="'+ch.modeName+'" data-quality="'+ch.quality+'">Diagram</button>';
     grid.appendChild(card);
   });
 }
 function renderModeList(chords){
-  var list=document.getElementById('mode-list');
-  list.innerHTML='';
-  chords.forEach(function(chord){
-    var row=document.createElement('div');
-    row.className='mode-row';
-    row.style.setProperty('--mode-color',chord.modeColor);
-    row.innerHTML='<div class="mode-meta"><span class="mode-chord-name">'+chord.chordName+'</span><span class="mode-roman">'+chord.roman+'</span></div>'+
-      '<div class="mode-info"><span class="mode-name">'+chord.modeName+'</span><p class="mode-desc">'+chord.modeDescription+'</p></div>';
+  var list=document.getElementById('mode-list');list.innerHTML='';
+  chords.forEach(function(ch){
+    var row=document.createElement('div');row.className='mode-row';row.style.setProperty('--mode-color',ch.modeColor);
+    row.innerHTML='<div class="mode-meta"><span class="mode-chord-name">'+ch.chordName+'</span><span class="mode-roman">'+ch.roman+'</span></div>'+
+      '<div class="mode-info"><span class="mode-name">'+ch.modeName+'</span><p class="mode-desc">'+ch.modeDescription+'</p></div>';
     list.appendChild(row);
   });
 }
@@ -686,7 +565,7 @@ function renderModeList(chords){
   <script>
 /* progression.js */
 var MAX_SLOTS=8,_progression=[];
-function addToProgression(chord){if(_progression.length>=MAX_SLOTS)return;_progression.push(chord);renderProgression();updateProgressionHint();}
+function addToProgression(ch){if(_progression.length>=MAX_SLOTS)return;_progression.push(ch);renderProgression();updateProgressionHint();}
 function removeFromProgression(i){_progression.splice(i,1);renderProgression();updateProgressionHint();}
 function clearProgression(){_progression=[];renderProgression();updateProgressionHint();}
 function getProgressionString(){return _progression.map(function(c){return c.chordName;}).join(' - ');}
@@ -696,8 +575,7 @@ function renderProgression(){
     var slot=document.createElement('div');
     if(_progression[i]){
       var ch=_progression[i];
-      slot.className='prog-slot prog-slot--filled prog-slot--'+ch.quality;
-      slot.dataset.slotIndex=i;
+      slot.className='prog-slot prog-slot--filled prog-slot--'+ch.quality;slot.dataset.slotIndex=i;
       var rb=document.createElement('button');rb.className='prog-remove';rb.dataset.index=i;rb.title='Remove';rb.innerHTML='&times;';
       var re=document.createElement('span');re.className='prog-roman';re.textContent=ch.roman;
       var ne=document.createElement('span');ne.className='prog-name';ne.textContent=ch.chordName;
@@ -706,7 +584,7 @@ function renderProgression(){
     c.appendChild(slot);
   }
   c.querySelectorAll('.prog-remove').forEach(function(btn){
-    btn.addEventListener('click',function(e){e.stopPropagation();removeFromProgression(parseInt(btn.dataset.index,10));});
+    btn.addEventListener('click',function(ev){ev.stopPropagation();removeFromProgression(parseInt(btn.dataset.index,10));});
   });
 }
 function updateProgressionHint(){var h=document.getElementById('progression-hint');if(h)h.style.display=_progression.length===0?'block':'none';}
@@ -720,19 +598,16 @@ document.addEventListener('DOMContentLoaded',function(){
 
   svg.addEventListener('keySelected',function(e){
     var key=e.detail.key;
-    AppState.currentKey=key;AppState.currentKeyIndex=e.detail.circleIndex;
-    AppState.currentChords=getDiatonicChords(key);
+    AppState.currentKey=key;AppState.currentKeyIndex=e.detail.circleIndex;AppState.currentChords=getDiatonicChords(key);
     document.getElementById('header-key').textContent=key+' Major';
-    renderChordGrid(AppState.currentChords,key);
-    renderModeList(AppState.currentChords);
+    renderChordGrid(AppState.currentChords,key);renderModeList(AppState.currentChords);
   });
 
   document.getElementById('chord-grid').addEventListener('click',function(e){
     if(e.target.matches('.btn-diagram')||e.target.closest('.btn-diagram'))return;
     var card=e.target.closest('.chord-card');if(!card)return;
     var chord=AppState.currentChords[parseInt(card.dataset.chordIndex,10)];if(!chord)return;
-    addToProgression(chord);
-    card.classList.add('active');setTimeout(function(){card.classList.remove('active');},300);
+    addToProgression(chord);card.classList.add('active');setTimeout(function(){card.classList.remove('active');},300);
   });
 
   document.getElementById('chord-grid').addEventListener('click',function(e){
@@ -741,13 +616,11 @@ document.addEventListener('DOMContentLoaded',function(){
   });
 
   document.getElementById('btn-clear').addEventListener('click',clearProgression);
-
   document.getElementById('btn-copy').addEventListener('click',function(){
     var str=getProgressionString();if(!str)return;
     if(navigator.clipboard){navigator.clipboard.writeText(str).then(function(){flashBtn(document.getElementById('btn-copy'),'Copied!');});}
     else{var ta=document.createElement('textarea');ta.value=str;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);flashBtn(document.getElementById('btn-copy'),'Copied!');}
   });
-
   document.getElementById('modal-close').addEventListener('click',closeDiagramModal);
   document.getElementById('modal-overlay').addEventListener('click',function(e){if(e.target===e.currentTarget)closeDiagramModal();});
   document.addEventListener('keydown',function(e){if(e.key==='Escape')closeDiagramModal();});
@@ -762,23 +635,23 @@ function openDiagramModal(vk,cn,mn){
 function closeDiagramModal(){document.getElementById('modal-overlay').setAttribute('hidden','');}
 function flashBtn(btn,text){var o=btn.textContent;btn.textContent=text;setTimeout(function(){btn.textContent=o;},1500);}
 
-var D_START_X=22,D_START_Y=36,D_STR_GAP=17,D_FRET_GAP=22,D_NUM_FRETS=4,D_DOT_R=7,D_OPEN_R=6;
+var D_SX=22,D_SY=36,D_SG=17,D_FG=22,D_NF=4,D_DR=7,D_OR=6;
 function renderChordDiagram(vk,svgEl){
   while(svgEl.firstChild)svgEl.removeChild(svgEl.firstChild);
-  var voicing=getVoicing(vk),frets=mirrorForLefty(voicing.frets),baseFret=voicing.baseFret,n=6;
+  var vo=getVoicing(vk),fr=mirrorForLefty(vo.frets),bf=vo.baseFret,n=6;
   function el(tag,attrs){var e=document.createElementNS('http://www.w3.org/2000/svg',tag);Object.keys(attrs).forEach(function(k){e.setAttribute(k,attrs[k]);});return e;}
-  for(var f=0;f<=D_NUM_FRETS;f++){var y=D_START_Y+f*D_FRET_GAP,x1=D_START_X,x2=D_START_X+(n-1)*D_STR_GAP;svgEl.appendChild(el('line',{x1:x1,y1:y,x2:x2,y2:y,'class':(f===0&&baseFret===1)?'fret-line fret-line--nut':'fret-line'}));}
-  for(var s=0;s<n;s++){var x=D_START_X+s*D_STR_GAP;svgEl.appendChild(el('line',{x1:x,y1:D_START_Y,x2:x,y2:D_START_Y+D_NUM_FRETS*D_FRET_GAP,'class':'string-line'}));}
-  if(baseFret>1){var fl=el('text',{x:D_START_X-5,y:D_START_Y+D_FRET_GAP*0.5+4,'class':'fret-number','text-anchor':'end'});fl.textContent=baseFret+'fr';svgEl.appendChild(fl);}
-  for(var s2=0;s2<n;s2++){var sx=D_START_X+s2*D_STR_GAP,my=D_START_Y-14,half=5;
-    if(frets[s2]===-1){svgEl.appendChild(el('line',{x1:sx-half,y1:my-half,x2:sx+half,y2:my+half,'class':'dot-mute-line'}));svgEl.appendChild(el('line',{x1:sx+half,y1:my-half,x2:sx-half,y2:my+half,'class':'dot-mute-line'}));}
-    else if(frets[s2]===0){svgEl.appendChild(el('circle',{cx:sx,cy:my,r:D_OPEN_R,'class':'dot-open'}));}
+  for(var f=0;f<=D_NF;f++){var y=D_SY+f*D_FG;svgEl.appendChild(el('line',{x1:D_SX,y1:y,x2:D_SX+(n-1)*D_SG,y2:y,'class':(f===0&&bf===1)?'fret-line fret-line--nut':'fret-line'}));}
+  for(var s=0;s<n;s++){var x=D_SX+s*D_SG;svgEl.appendChild(el('line',{x1:x,y1:D_SY,x2:x,y2:D_SY+D_NF*D_FG,'class':'string-line'}));}
+  if(bf>1){var fl=el('text',{x:D_SX-5,y:D_SY+D_FG*0.5+4,'class':'fret-number','text-anchor':'end'});fl.textContent=bf+'fr';svgEl.appendChild(fl);}
+  for(var s2=0;s2<n;s2++){var sx=D_SX+s2*D_SG,my=D_SY-14,h=5;
+    if(fr[s2]===-1){svgEl.appendChild(el('line',{x1:sx-h,y1:my-h,x2:sx+h,y2:my+h,'class':'dot-mute-line'}));svgEl.appendChild(el('line',{x1:sx+h,y1:my-h,x2:sx-h,y2:my+h,'class':'dot-mute-line'}));}
+    else if(fr[s2]===0){svgEl.appendChild(el('circle',{cx:sx,cy:my,r:D_OR,'class':'dot-open'}));}
   }
-  var played=frets.filter(function(f){return f>0;}),minF=played.length?Math.min.apply(null,played):0;
-  var barreS=[];frets.forEach(function(f,i){if(f===minF&&minF>0)barreS.push(i);});
-  if(barreS.length>=3){var rf=minF-(baseFret-1),by=D_START_Y+(rf-0.5)*D_FRET_GAP;svgEl.appendChild(el('line',{x1:D_START_X+barreS[0]*D_STR_GAP,y1:by,x2:D_START_X+barreS[barreS.length-1]*D_STR_GAP,y2:by,'class':'barre-bar'}));}
-  for(var s3=0;s3<n;s3++){var fn=frets[s3];if(fn<=0)continue;var rfn=fn-(baseFret-1);if(rfn<1||rfn>D_NUM_FRETS)continue;var isBarre=barreS.length>=3&&fn===minF;if(!isBarre)svgEl.appendChild(el('circle',{cx:D_START_X+s3*D_STR_GAP,cy:D_START_Y+(rfn-0.5)*D_FRET_GAP,r:D_DOT_R,'class':'fret-dot'}));}
-  if(barreS.length>=3){for(var s4=0;s4<n;s4++){var fv=frets[s4];if(fv<=0||fv===minF)continue;var rv=fv-(baseFret-1);if(rv<1||rv>D_NUM_FRETS)continue;svgEl.appendChild(el('circle',{cx:D_START_X+s4*D_STR_GAP,cy:D_START_Y+(rv-0.5)*D_FRET_GAP,r:D_DOT_R,'class':'fret-dot'}));}}
+  var pf=fr.filter(function(v){return v>0;}),mf=pf.length?Math.min.apply(null,pf):0;
+  var bs=[];fr.forEach(function(v,i){if(v===mf&&mf>0)bs.push(i);});
+  if(bs.length>=3){var rf=mf-(bf-1),by=D_SY+(rf-0.5)*D_FG;svgEl.appendChild(el('line',{x1:D_SX+bs[0]*D_SG,y1:by,x2:D_SX+bs[bs.length-1]*D_SG,y2:by,'class':'barre-bar'}));}
+  for(var s3=0;s3<n;s3++){var fn=fr[s3];if(fn<=0)continue;var rn=fn-(bf-1);if(rn<1||rn>D_NF)continue;if(!(bs.length>=3&&fn===mf))svgEl.appendChild(el('circle',{cx:D_SX+s3*D_SG,cy:D_SY+(rn-0.5)*D_FG,r:D_DR,'class':'fret-dot'}));}
+  if(bs.length>=3)for(var s4=0;s4<n;s4++){var fv=fr[s4];if(fv<=0||fv===mf)continue;var rv=fv-(bf-1);if(rv<1||rv>D_NF)continue;svgEl.appendChild(el('circle',{cx:D_SX+s4*D_SG,cy:D_SY+(rv-0.5)*D_FG,r:D_DR,'class':'fret-dot'}));}
 }
   </script>
 

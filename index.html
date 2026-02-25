@@ -4,6 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Circle of Fifths — Guitar Tool</title>
+
+  <!-- Roboto Flex — variable font, MD3 standard -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,300..900&display=swap">
+
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -11,22 +17,25 @@
   <header class="site-header">
     <div class="header-inner">
       <h1>Circle of Fifths</h1>
-      <span class="header-key" id="header-key">— select a key —</span>
+      <span class="header-key" id="header-key">select a key</span>
     </div>
   </header>
 
   <main class="layout">
 
-    <!-- Left column: Circle SVG -->
-    <section class="panel panel--circle">
-      <svg id="circle-svg" viewBox="-200 -200 400 400" width="400" height="400" aria-label="Circle of Fifths"></svg>
+    <!-- Left column: Circle of Fifths SVG -->
+    <section class="panel panel--circle" aria-label="Circle of Fifths">
+      <svg id="circle-svg"
+           viewBox="-200 -200 400 400"
+           width="400" height="400"
+           aria-label="Interactive Circle of Fifths — click a segment to select a key"></svg>
     </section>
 
     <!-- Right column: stacked panels -->
     <div class="panel-stack">
 
-      <!-- Diatonic chords -->
-      <section class="panel panel--chords">
+      <!-- Diatonic chord grid -->
+      <section class="panel panel--chords" aria-live="polite">
         <h2 class="panel-title">Diatonic Chords <span id="key-label"></span></h2>
         <div class="chord-grid" id="chord-grid">
           <p class="placeholder">Click a key on the circle to see its chords.</p>
@@ -34,7 +43,7 @@
       </section>
 
       <!-- Mode explorer -->
-      <section class="panel panel--modes">
+      <section class="panel panel--modes" aria-live="polite">
         <h2 class="panel-title">Mode Explorer</h2>
         <div class="mode-list" id="mode-list">
           <p class="placeholder">Select a key to explore its modes.</p>
@@ -50,36 +59,36 @@
             <button class="btn btn--danger" id="btn-clear">Clear</button>
           </div>
         </div>
-        <div class="progression-slots" id="progression-slots"></div>
+        <div class="progression-slots" id="progression-slots" aria-live="polite"></div>
         <p class="progression-hint" id="progression-hint">Click any chord above to add it here.</p>
       </section>
 
     </div>
   </main>
 
-  <!-- Chord diagram modal -->
-  <div class="modal-overlay" id="modal-overlay" hidden>
-    <div class="modal" id="modal-chord" role="dialog" aria-modal="true">
-      <button class="modal-close" id="modal-close" aria-label="Close">×</button>
+  <!-- MD3 Dialog: chord diagram -->
+  <div class="modal-overlay" id="modal-overlay" hidden role="presentation">
+    <div class="modal" id="modal-chord" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <button class="modal-close" id="modal-close" aria-label="Close diagram">&#x2715;</button>
       <h3 class="modal-title" id="modal-title"></h3>
       <p class="modal-subtitle" id="modal-subtitle"></p>
       <div class="diagram-container">
-        <svg id="diagram-svg" viewBox="0 0 130 170" width="130" height="170"></svg>
+        <svg id="diagram-svg" viewBox="0 0 130 170" width="130" height="170" aria-hidden="true"></svg>
       </div>
-      <p class="diagram-lefty-note">Left-handed diagram (low E on right)</p>
+      <p class="diagram-lefty-note">Left-handed · low E on right</p>
     </div>
   </div>
 
-  <!-- Shared state: declared before all modules so every script can access it -->
+  <!-- Shared state: declared before modules -->
   <script>
     var AppState = {
-      currentKey: null,
+      currentKey:      null,
       currentKeyIndex: null,
-      currentChords: [],
+      currentChords:   [],
     };
   </script>
 
-  <!-- Modules loaded in dependency order (no ES modules — file:// CORS safe) -->
+  <!-- Modules in dependency order (no ES modules — Vercel-safe and file:// safe) -->
   <script src="js/theory.js"></script>
   <script src="js/voicings.js"></script>
   <script src="js/circle.js"></script>
