@@ -1,0 +1,529 @@
+/* ============================================================
+   Circle of Fifths — Guitar Tool
+   Dark music-studio aesthetic
+   ============================================================ */
+
+/* --- Design Tokens ----------------------------------------- */
+:root {
+  --bg-base:      #09090f;
+  --bg-surface:   #101018;
+  --bg-elevated:  #181826;
+  --bg-hover:     #1f1f30;
+
+  --text-primary:   #f0f0f8;
+  --text-secondary: #8888aa;
+  --text-muted:     #4a4a66;
+
+  /* Chord quality colors */
+  --color-maj:  #f59e0b;   /* amber/gold */
+  --color-min:  #6b7280;   /* steel gray */
+  --color-dim:  #ef4444;   /* red */
+
+  /* Circle highlight colors */
+  --circle-selected:  #7c3aed;   /* violet — selected key */
+  --circle-fifth:     #0891b2;   /* cyan — dominant (V) */
+  --circle-fourth:    #0e7490;   /* dark cyan — subdominant (IV) */
+  --circle-rel-minor: #6d28d9;   /* purple — relative minor */
+  --circle-default:   #1a1a28;
+  --circle-minor-default: #111120;
+
+  /* Accent / UI */
+  --accent:       #7c3aed;
+  --accent-hover: #6d28d9;
+  --danger:       #dc2626;
+
+  --radius-sm:  6px;
+  --radius-md:  12px;
+  --radius-lg:  18px;
+
+  --shadow-panel: 0 4px 24px rgba(0,0,0,0.5);
+  --glow-violet:  0 0 24px rgba(124,58,237,0.35);
+
+  --font-ui: 'Inter', 'Segoe UI', system-ui, sans-serif;
+}
+
+/* --- Reset -------------------------------------------------- */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; }
+body {
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  min-height: 100vh;
+  line-height: 1.5;
+}
+
+/* --- Header ------------------------------------------------- */
+.site-header {
+  background: var(--bg-surface);
+  border-bottom: 1px solid #1e1e30;
+  padding: 14px 24px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.header-inner {
+  max-width: 1300px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.site-header h1 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.header-key {
+  font-size: 0.9rem;
+  color: var(--color-maj);
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+/* --- Layout ------------------------------------------------- */
+.layout {
+  display: grid;
+  grid-template-columns: 420px 1fr;
+  gap: 20px;
+  padding: 24px;
+  max-width: 1300px;
+  margin: 0 auto;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+  .panel--circle {
+    display: flex;
+    justify-content: center;
+  }
+}
+
+/* --- Panels ------------------------------------------------- */
+.panel {
+  background: var(--bg-surface);
+  border: 1px solid #1e1e30;
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-panel);
+}
+
+.panel-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.panel-title {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 14px;
+}
+.panel-title span {
+  color: var(--color-maj);
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.85rem;
+}
+
+.placeholder {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+/* --- Circle SVG -------------------------------------------- */
+.panel--circle {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
+}
+
+/* CSS classes applied to SVG <path> elements by circle.js */
+.arc-major {
+  fill: var(--circle-default);
+  stroke: #242438;
+  stroke-width: 1.5;
+  cursor: pointer;
+  transition: fill 0.15s ease, filter 0.15s ease;
+}
+.arc-major:hover { fill: var(--bg-hover); }
+.arc-major.selected {
+  fill: var(--circle-selected);
+  filter: drop-shadow(0 0 10px rgba(124,58,237,0.7));
+}
+.arc-major.neighbor-fifth  { fill: #0c3d4d; }
+.arc-major.neighbor-fourth { fill: #0a3040; }
+
+.arc-minor {
+  fill: var(--circle-minor-default);
+  stroke: #1a1a2a;
+  stroke-width: 1;
+  cursor: pointer;
+  transition: fill 0.15s ease;
+}
+.arc-minor:hover { fill: #181828; }
+.arc-minor.selected { fill: var(--circle-rel-minor); }
+.arc-minor.neighbor-fifth  { fill: #0a2a35; }
+.arc-minor.neighbor-fourth { fill: #08222c; }
+
+/* Text inside circle arcs */
+.arc-label-major {
+  fill: var(--text-primary);
+  font-size: 12px;
+  font-weight: 700;
+  font-family: var(--font-ui);
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+  user-select: none;
+}
+.arc-label-minor {
+  fill: var(--text-secondary);
+  font-size: 8px;
+  font-weight: 500;
+  font-family: var(--font-ui);
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+  user-select: none;
+}
+.arc-label-major.selected { fill: #ffffff; }
+.arc-label-minor.selected { fill: #e0d4ff; }
+
+/* Center hub */
+.circle-center {
+  fill: #0d0d18;
+  stroke: #242438;
+  stroke-width: 1.5;
+}
+.circle-center-text {
+  fill: var(--text-muted);
+  font-size: 8px;
+  font-family: var(--font-ui);
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* --- Chord Grid -------------------------------------------- */
+.chord-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+@media (max-width: 700px) {
+  .chord-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+.chord-card {
+  background: var(--bg-elevated);
+  border: 2px solid transparent;
+  border-radius: var(--radius-md);
+  padding: 10px 6px;
+  cursor: pointer;
+  text-align: center;
+  transition: border-color 0.15s, transform 0.1s, box-shadow 0.15s;
+  position: relative;
+}
+.chord-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(124,58,237,0.2);
+}
+.chord-card.active {
+  border-color: var(--color-maj);
+  background: #1e1a0a;
+}
+
+.chord-roman {
+  display: block;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+.chord-card--maj .chord-roman { color: var(--color-maj); }
+.chord-card--min .chord-roman { color: var(--color-min); }
+.chord-card--dim .chord-roman { color: var(--color-dim); }
+
+.chord-name {
+  display: block;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.1;
+  margin-bottom: 3px;
+}
+
+.chord-mode-name {
+  display: block;
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  line-height: 1.2;
+}
+
+.btn-diagram {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 3px 0;
+  background: #242438;
+  border: 1px solid #333355;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 0.58rem;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+}
+.btn-diagram:hover {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+/* --- Mode List --------------------------------------------- */
+.mode-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mode-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-md);
+  border-left: 3px solid var(--mode-color, #333);
+}
+
+.mode-meta {
+  flex-shrink: 0;
+  min-width: 72px;
+}
+.mode-chord-name {
+  font-weight: 700;
+  font-size: 0.95rem;
+  display: block;
+  line-height: 1.2;
+}
+.mode-roman {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  display: block;
+}
+
+.mode-info { flex: 1; }
+.mode-name {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  display: block;
+  margin-bottom: 2px;
+}
+.mode-desc {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+/* --- Progression Builder ----------------------------------- */
+.progression-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.progression-header .panel-title { margin-bottom: 0; }
+
+.progression-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn {
+  padding: 5px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background 0.1s, opacity 0.1s;
+}
+.btn--ghost {
+  background: transparent;
+  border-color: #333355;
+  color: var(--text-secondary);
+}
+.btn--ghost:hover { border-color: var(--accent); color: var(--text-primary); }
+.btn--danger {
+  background: transparent;
+  border-color: #4a1a1a;
+  color: var(--danger);
+}
+.btn--danger:hover { background: var(--danger); color: #fff; }
+
+.progression-slots {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-height: 62px;
+  align-items: flex-start;
+}
+
+.prog-slot {
+  width: 68px;
+  min-height: 58px;
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  position: relative;
+  font-size: 0.8rem;
+}
+.prog-slot--empty {
+  border: 2px dashed #2a2a3f;
+  background: transparent;
+}
+.prog-slot--filled {
+  background: var(--bg-elevated);
+  border: 2px solid #333355;
+  cursor: pointer;
+}
+.prog-slot--filled:hover { border-color: var(--danger); }
+.prog-slot--filled:hover .prog-remove { opacity: 1; }
+
+.prog-slot--maj { border-color: #3a2a00 !important; }
+.prog-slot--maj:hover { border-color: var(--danger) !important; }
+.prog-slot--min { border-color: #2a2a3a !important; }
+.prog-slot--min:hover { border-color: var(--danger) !important; }
+.prog-slot--dim { border-color: #2a1010 !important; }
+.prog-slot--dim:hover { border-color: var(--danger) !important; }
+
+.prog-roman {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.prog-name {
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+.prog-slot--maj .prog-name { color: var(--color-maj); }
+.prog-slot--min .prog-name { color: var(--text-secondary); }
+.prog-slot--dim .prog-name { color: var(--color-dim); }
+
+.prog-remove {
+  position: absolute;
+  top: -7px; right: -7px;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--danger);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  font-size: 11px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.progression-hint {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-style: italic;
+  margin-top: 10px;
+}
+
+/* --- Modal ------------------------------------------------- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+  z-index: 100;
+}
+.modal-overlay[hidden] { display: none; }
+
+.modal {
+  background: var(--bg-surface);
+  border: 1px solid #2a2a40;
+  border-radius: var(--radius-lg);
+  padding: 28px 32px;
+  min-width: 220px;
+  text-align: center;
+  position: relative;
+  box-shadow: var(--glow-violet), var(--shadow-panel);
+  animation: modal-in 0.18s ease;
+}
+@keyframes modal-in {
+  from { opacity: 0; transform: scale(0.92) translateY(8px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.modal-close {
+  position: absolute;
+  top: 12px; right: 14px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.4rem;
+  cursor: pointer;
+  line-height: 1;
+  transition: color 0.1s;
+}
+.modal-close:hover { color: var(--text-primary); }
+
+.modal-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+.modal-subtitle {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+}
+
+.diagram-container {
+  display: flex;
+  justify-content: center;
+  margin: 0 auto 10px;
+}
+
+.diagram-lefty-note {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  font-style: italic;
+  margin-top: 8px;
+}
+
+/* Chord diagram SVG element styles */
+.fret-line        { stroke: #2a2a44; stroke-width: 1; }
+.fret-line--nut   { stroke: #888; stroke-width: 3; }
+.string-line      { stroke: #3a3a55; stroke-width: 1; }
+.fret-dot         { fill: var(--accent); }
+.dot-open         { fill: none; stroke: #888; stroke-width: 1.5; }
+.dot-mute-line    { stroke: #666; stroke-width: 1.5; stroke-linecap: round; }
+.barre-bar        { stroke: var(--accent); stroke-width: 10; stroke-linecap: round; opacity: 0.75; }
+.fret-number      { fill: var(--text-muted); font-size: 9px; font-family: var(--font-ui); }

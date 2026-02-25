@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Circle of Fifths — Guitar Tool</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <h1>Circle of Fifths</h1>
+      <span class="header-key" id="header-key">— select a key —</span>
+    </div>
+  </header>
+
+  <main class="layout">
+
+    <!-- Left column: Circle SVG -->
+    <section class="panel panel--circle">
+      <svg id="circle-svg" viewBox="-200 -200 400 400" width="400" height="400" aria-label="Circle of Fifths"></svg>
+    </section>
+
+    <!-- Right column: stacked panels -->
+    <div class="panel-stack">
+
+      <!-- Diatonic chords -->
+      <section class="panel panel--chords">
+        <h2 class="panel-title">Diatonic Chords <span id="key-label"></span></h2>
+        <div class="chord-grid" id="chord-grid">
+          <p class="placeholder">Click a key on the circle to see its chords.</p>
+        </div>
+      </section>
+
+      <!-- Mode explorer -->
+      <section class="panel panel--modes">
+        <h2 class="panel-title">Mode Explorer</h2>
+        <div class="mode-list" id="mode-list">
+          <p class="placeholder">Select a key to explore its modes.</p>
+        </div>
+      </section>
+
+      <!-- Progression builder -->
+      <section class="panel panel--progression">
+        <div class="progression-header">
+          <h2 class="panel-title">Progression Builder</h2>
+          <div class="progression-actions">
+            <button class="btn btn--ghost" id="btn-copy" title="Copy chord names to clipboard">Copy</button>
+            <button class="btn btn--danger" id="btn-clear">Clear</button>
+          </div>
+        </div>
+        <div class="progression-slots" id="progression-slots"></div>
+        <p class="progression-hint" id="progression-hint">Click any chord above to add it here.</p>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Chord diagram modal -->
+  <div class="modal-overlay" id="modal-overlay" hidden>
+    <div class="modal" id="modal-chord" role="dialog" aria-modal="true">
+      <button class="modal-close" id="modal-close" aria-label="Close">×</button>
+      <h3 class="modal-title" id="modal-title"></h3>
+      <p class="modal-subtitle" id="modal-subtitle"></p>
+      <div class="diagram-container">
+        <svg id="diagram-svg" viewBox="0 0 130 170" width="130" height="170"></svg>
+      </div>
+      <p class="diagram-lefty-note">Left-handed diagram (low E on right)</p>
+    </div>
+  </div>
+
+  <!-- Shared state: declared before all modules so every script can access it -->
+  <script>
+    var AppState = {
+      currentKey: null,
+      currentKeyIndex: null,
+      currentChords: [],
+    };
+  </script>
+
+  <!-- Modules loaded in dependency order (no ES modules — file:// CORS safe) -->
+  <script src="js/theory.js"></script>
+  <script src="js/voicings.js"></script>
+  <script src="js/circle.js"></script>
+  <script src="js/chords.js"></script>
+  <script src="js/progression.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
+</html>
