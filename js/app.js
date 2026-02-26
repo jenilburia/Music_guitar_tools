@@ -42,6 +42,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // ── Event: chord card clicked (add to progression) ─────────
   document.getElementById('chord-grid').addEventListener('click', function(e) {
     if (e.target.matches('.btn-diagram') || e.target.closest('.btn-diagram')) return;
+    if (e.target.matches('.btn-play-chord') || e.target.closest('.btn-play-chord')) return;
 
     var card = e.target.closest('.chord-card');
     if (!card) return;
@@ -61,6 +62,32 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!btn) return;
     e.stopPropagation();
     openDiagramModal(btn.dataset.voicingKey, btn.dataset.chordName, btn.dataset.modeName);
+  });
+
+  // ── Event: Play chord button on chord card ──────────────────
+  document.getElementById('chord-grid').addEventListener('click', function(e) {
+    var btn = e.target.closest('.btn-play-chord');
+    if (!btn) return;
+    e.stopPropagation();
+    if (typeof playChord === 'function') playChord(btn.dataset.voicingKey);
+  });
+
+  // ── Event: Play button on progression slot ──────────────────
+  document.getElementById('progression-slots').addEventListener('click', function(e) {
+    var btn = e.target.closest('.prog-play');
+    if (!btn) return;
+    e.stopPropagation();
+    if (typeof playChord === 'function') playChord(btn.dataset.voicingKey);
+  });
+
+  // ── Event: Play All progression ─────────────────────────────
+  document.getElementById('btn-play-all').addEventListener('click', function() {
+    var chords = getProgression();
+    if (!chords.length) {
+      flashBtn(this, 'Empty!');
+      return;
+    }
+    if (typeof playProgression === 'function') playProgression(chords);
   });
 
   // ── Event: Mode row clicked (generate mode-specific) ───────

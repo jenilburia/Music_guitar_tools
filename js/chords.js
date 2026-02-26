@@ -31,6 +31,10 @@ function renderChordGrid(chords, keyName) {
               'data-mode-name="' + chord.modeName + '" ' +
               'data-quality="' + chord.quality + '">' +
         'Diagram' +
+      '</button>' +
+      '<button class="btn-play-chord" data-voicing-key="' + chord.voicingKey + '" ' +
+              'title="Play ' + chord.chordName + '">' +
+        '&#9654; Play' +
       '</button>';
 
     grid.appendChild(card);

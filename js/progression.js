@@ -49,6 +49,15 @@ function setProgression(chords) {
 }
 
 // ---------------------------------------------------------------
+// getProgression()
+// Returns a copy of the current progression array.
+// Used by audio.js to play all chords in sequence.
+// ---------------------------------------------------------------
+function getProgression() {
+  return _progression.slice();
+}
+
+// ---------------------------------------------------------------
 // getProgressionString()
 // Returns human-readable string e.g. "Am - F - C - G"
 // ---------------------------------------------------------------
@@ -79,6 +88,12 @@ function renderProgression() {
       removeBtn.title = 'Remove';
       removeBtn.innerHTML = '&times;';
 
+      var playBtn = document.createElement('button');
+      playBtn.className = 'prog-play';
+      playBtn.dataset.voicingKey = chord.voicingKey;
+      playBtn.title = 'Play ' + chord.chordName;
+      playBtn.innerHTML = '&#9654;';
+
       var romanEl = document.createElement('span');
       romanEl.className = 'prog-roman';
       romanEl.textContent = chord.roman;
@@ -90,6 +105,7 @@ function renderProgression() {
       slot.appendChild(removeBtn);
       slot.appendChild(romanEl);
       slot.appendChild(nameEl);
+      slot.appendChild(playBtn);
     } else {
       slot.className = 'prog-slot prog-slot--empty';
     }
