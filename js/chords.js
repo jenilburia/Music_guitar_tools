@@ -40,7 +40,7 @@ function renderChordGrid(chords, keyName) {
 // ---------------------------------------------------------------
 // renderModeList(chords)
 // Renders 7 mode rows into #mode-list.
-// Each row shows: chord name, Roman numeral, mode name, description.
+// Each row is clickable to generate a mode-specific progression.
 // ---------------------------------------------------------------
 function renderModeList(chords) {
   var list = document.getElementById('mode-list');
@@ -48,8 +48,10 @@ function renderModeList(chords) {
 
   chords.forEach(function(chord) {
     var row = document.createElement('div');
-    row.className = 'mode-row';
+    row.className = 'mode-row mode-row--clickable';
     row.style.setProperty('--mode-color', chord.modeColor);
+    row.dataset.modeName = chord.modeName;
+    row.title = 'Click to generate a ' + chord.modeName + ' progression';
 
     row.innerHTML =
       '<div class="mode-meta">' +
@@ -59,7 +61,8 @@ function renderModeList(chords) {
       '<div class="mode-info">' +
         '<span class="mode-name">' + chord.modeName + '</span>' +
         '<p class="mode-desc">' + chord.modeDescription + '</p>' +
-      '</div>';
+      '</div>' +
+      '<span class="mode-generate-hint">Generate</span>';
 
     list.appendChild(row);
   });

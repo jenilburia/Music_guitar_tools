@@ -38,6 +38,17 @@ function clearProgression() {
 }
 
 // ---------------------------------------------------------------
+// setProgression(chords)
+// Replaces entire progression with an array of chord descriptors.
+// Used by the generator to populate from a template.
+// ---------------------------------------------------------------
+function setProgression(chords) {
+  _progression = chords.slice(0, MAX_SLOTS);
+  renderProgression();
+  updateProgressionHint();
+}
+
+// ---------------------------------------------------------------
 // getProgressionString()
 // Returns human-readable string e.g. "Am - F - C - G"
 // ---------------------------------------------------------------

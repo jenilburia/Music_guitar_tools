@@ -1,14 +1,14 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Circle of Fifths — Guitar Tool</title>
 
-  <!-- Roboto Flex — variable font, MD3 standard -->
+  <!-- Space Mono — retro technical font -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,300..900&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap">
 
   <link rel="stylesheet" href="css/style.css">
 </head>
@@ -18,6 +18,10 @@
     <div class="header-inner">
       <h1>Circle of Fifths</h1>
       <span class="header-key" id="header-key">select a key</span>
+      <div class="header-controls">
+        <button class="btn--icon" id="btn-lefty" title="Switch between left-handed and right-handed chord diagrams">L</button>
+        <button class="btn--icon" id="btn-theme" title="Toggle dark / light mode">◑</button>
+      </div>
     </div>
   </header>
 
@@ -27,12 +31,28 @@
     <section class="panel panel--circle" aria-label="Circle of Fifths">
       <svg id="circle-svg"
            viewBox="-200 -200 400 400"
-           width="400" height="400"
+           width="460" height="460"
            aria-label="Interactive Circle of Fifths — click a segment to select a key"></svg>
     </section>
 
-    <!-- Right column: stacked panels -->
+    <!-- Right column: stacked panels (Progression first on desktop) -->
     <div class="panel-stack">
+
+      <!-- Progression builder + Generator (TOP on desktop, just after circle on mobile) -->
+      <section class="panel panel--progression">
+        <div class="progression-header">
+          <h2 class="panel-title">Progression Builder</h2>
+          <div class="progression-actions">
+            <button class="btn btn--primary" id="btn-generate" title="Auto-generate a chord progression for the selected key">Generate</button>
+            <button class="btn btn--tonal" id="btn-shuffle" title="Shuffle — try a different progression">Shuffle</button>
+            <button class="btn btn--ghost" id="btn-copy" title="Copy chord names to clipboard">Copy</button>
+            <button class="btn btn--danger" id="btn-clear">Clear</button>
+          </div>
+        </div>
+        <div class="progression-slots" id="progression-slots" aria-live="polite"></div>
+        <p class="progression-hint" id="progression-hint">Click a chord above, or hit Generate to auto-build a progression.</p>
+        <div class="explanation-panel" id="explanation-panel" style="display:none" aria-live="polite"></div>
+      </section>
 
       <!-- Diatonic chord grid -->
       <section class="panel panel--chords" aria-live="polite">
@@ -44,29 +64,16 @@
 
       <!-- Mode explorer -->
       <section class="panel panel--modes" aria-live="polite">
-        <h2 class="panel-title">Mode Explorer</h2>
+        <h2 class="panel-title">Mode Explorer <span style="font-size:10px;font-weight:400;letter-spacing:0.5px;color:var(--muted-foreground)">— click a row to generate</span></h2>
         <div class="mode-list" id="mode-list">
           <p class="placeholder">Select a key to explore its modes.</p>
         </div>
       </section>
 
-      <!-- Progression builder -->
-      <section class="panel panel--progression">
-        <div class="progression-header">
-          <h2 class="panel-title">Progression Builder</h2>
-          <div class="progression-actions">
-            <button class="btn btn--ghost" id="btn-copy" title="Copy chord names to clipboard">Copy</button>
-            <button class="btn btn--danger" id="btn-clear">Clear</button>
-          </div>
-        </div>
-        <div class="progression-slots" id="progression-slots" aria-live="polite"></div>
-        <p class="progression-hint" id="progression-hint">Click any chord above to add it here.</p>
-      </section>
-
     </div>
   </main>
 
-  <!-- MD3 Dialog: chord diagram -->
+  <!-- Chord diagram modal -->
   <div class="modal-overlay" id="modal-overlay" hidden role="presentation">
     <div class="modal" id="modal-chord" role="dialog" aria-modal="true" aria-labelledby="modal-title">
       <button class="modal-close" id="modal-close" aria-label="Close diagram">&#x2715;</button>
@@ -75,7 +82,7 @@
       <div class="diagram-container">
         <svg id="diagram-svg" viewBox="0 0 130 170" width="130" height="170" aria-hidden="true"></svg>
       </div>
-      <p class="diagram-lefty-note">Left-handed · low E on right</p>
+      <p class="diagram-lefty-note" id="diagram-hand-note">Left-handed · low E on right</p>
     </div>
   </div>
 
@@ -85,15 +92,17 @@
       currentKey:      null,
       currentKeyIndex: null,
       currentChords:   [],
+      isLefty:         true,   // default left-handed; toggled by btn-lefty
     };
   </script>
 
-  <!-- Modules in dependency order (no ES modules — Vercel-safe and file:// safe) -->
+  <!-- Modules in dependency order (no ES modules — file:// safe) -->
   <script src="js/theory.js"></script>
   <script src="js/voicings.js"></script>
   <script src="js/circle.js"></script>
   <script src="js/chords.js"></script>
   <script src="js/progression.js"></script>
+  <script src="js/generator.js"></script>
   <script src="js/app.js"></script>
 
 </body>
