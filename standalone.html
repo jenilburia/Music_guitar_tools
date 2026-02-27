@@ -107,14 +107,14 @@
   --color-min:             #5888b8;
   --color-dim:             #d05050;
 
-  --circle-selected-fill:  #3a1e00;
-  --circle-fifth-fill:     #142814;
-  --circle-fourth-fill:    #121824;
-  --circle-minor-sel-fill: #2a1800;
-  --circle-base-fill:      #1e1e1e;
-  --circle-base-fill-hover:#282828;
-  --circle-minor-fill:     #181818;
-  --circle-minor-hover:    #222222;
+  --circle-selected-fill:  #6b2500;
+  --circle-fifth-fill:     #1d4a22;
+  --circle-fourth-fill:    #1a2d60;
+  --circle-minor-sel-fill: #502800;
+  --circle-base-fill:      #242424;
+  --circle-base-fill-hover:#2e2e2e;
+  --circle-minor-fill:     #1c1c1c;
+  --circle-minor-hover:    #262626;
   --circle-label:          #c8c4bc;
   --circle-label-sel:      #f4f0e8;
   --circle-center:         #0a0a0a;
@@ -262,7 +262,7 @@ body {
 .panel--circle { animation: panel-in 0.45s 0.02s cubic-bezier(0.2,0,0,1) both; }
 
 .panel-title {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 2px;
   text-transform: uppercase;
@@ -287,7 +287,8 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 20px;
+  padding: 6px;
+  background: radial-gradient(ellipse at center, var(--card) 55%, color-mix(in srgb, var(--card) 70%, var(--background)) 100%);
 }
 #circle-svg {
   max-width: 100%;
@@ -306,10 +307,24 @@ body {
 .arc-major:hover { fill: var(--circle-base-fill-hover); }
 .arc-major.selected {
   fill: var(--circle-selected-fill);
-  filter: drop-shadow(0 0 10px rgba(180,130,40,0.5));
+  animation: arc-select-pulse 0.45s ease forwards;
 }
 .arc-major.neighbor-fifth  { fill: var(--circle-fifth-fill); }
 .arc-major.neighbor-fourth { fill: var(--circle-fourth-fill); }
+
+@keyframes arc-select-pulse {
+  0%   { filter: drop-shadow(0 0 2px rgba(244,124,32,0.2)); }
+  40%  { filter: drop-shadow(0 0 22px rgba(244,124,32,0.95)); }
+  100% { filter: drop-shadow(0 0 12px rgba(244,124,32,0.5)); }
+}
+
+/* Hover pill — appears on group hover, label fades */
+.arc-add-pill { opacity: 0; pointer-events: none; transition: opacity 0.18s; cursor: pointer; }
+.arc-group:hover .arc-label-major,
+.arc-group:hover .arc-label-minor { opacity: 0; transition: opacity 0.15s; pointer-events: none; }
+.arc-group:hover .arc-add-pill { opacity: 1; pointer-events: auto; }
+.arc-group:hover .arc-major { filter: drop-shadow(0 0 6px rgba(244,124,32,0.25)); }
+.arc-group:hover .arc-minor { filter: drop-shadow(0 0 4px rgba(244,124,32,0.15)); }
 
 .arc-minor {
   fill: var(--circle-minor-fill);
@@ -319,7 +334,7 @@ body {
   transition: fill 0.18s ease;
 }
 .arc-minor:hover { fill: var(--circle-minor-hover); }
-.arc-minor.selected { fill: var(--circle-minor-sel-fill); }
+.arc-minor.selected { fill: var(--circle-minor-sel-fill); animation: arc-select-pulse 0.45s ease forwards; }
 .arc-minor.neighbor-fifth  {
   fill: color-mix(in srgb, var(--circle-fifth-fill) 60%, var(--circle-minor-fill));
 }
@@ -329,7 +344,7 @@ body {
 
 .arc-label-major {
   fill: var(--circle-label);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   font-family: var(--font);
   text-anchor: middle;
@@ -340,7 +355,7 @@ body {
 }
 .arc-label-minor {
   fill: var(--muted-foreground);
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 400;
   font-family: var(--font);
   text-anchor: middle;
@@ -358,7 +373,7 @@ body {
 }
 .circle-center-text {
   fill: var(--muted-foreground);
-  font-size: 7px;
+  font-size: 9px;
   font-family: var(--font);
   text-anchor: middle;
   dominant-baseline: central;
@@ -419,7 +434,7 @@ body {
 
 .chord-roman {
   display: block;
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.5px;
   margin-bottom: 4px;
@@ -438,7 +453,7 @@ body {
 }
 .chord-mode-name {
   display: block;
-  font-size: 8px;
+  font-size: 10px;
   color: var(--muted-foreground);
   line-height: 1.2;
   margin-bottom: 5px;
@@ -525,7 +540,7 @@ body {
   line-height: 1.2;
 }
 .mode-roman {
-  font-size: 9px;
+  font-size: 11px;
   color: var(--muted-foreground);
   font-weight: 400;
   display: block;
@@ -667,8 +682,9 @@ body {
 }
 
 @keyframes slot-enter {
-  from { opacity: 0; transform: translateY(-10px) scale(0.88); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
+  0%   { opacity: 0; transform: translateY(-12px) scale(0.85); }
+  60%  { transform: translateY(3px) scale(1.03); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .prog-slot {
@@ -696,7 +712,7 @@ body {
     0 3px 0 var(--btn-shadow),
     0 4px 6px rgba(0,0,0,0.12);
   cursor: default;
-  animation: slot-enter 0.22s cubic-bezier(0.2,0,0,1) both;
+  animation: slot-enter 0.3s cubic-bezier(0.34,1.56,0.64,1) both;
   transition: border-color 0.15s;
 }
 .prog-slot--filled:hover { border-color: var(--destructive); }
@@ -944,6 +960,179 @@ body {
   border-color: var(--primary);
 }
 
+/* ── VST / Hardware Retro Aesthetic (dark mode enhancements) ── */
+[data-theme="dark"] .panel {
+  box-shadow: 0 2px 16px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.04);
+}
+[data-theme="dark"] .btn--primary {
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.15),
+    0 4px 0 #6a2800,
+    0 6px 12px rgba(244,124,32,0.3);
+}
+[data-theme="dark"] .header-key {
+  box-shadow: 0 0 10px rgba(244,124,32,0.45), 0 0 20px rgba(244,124,32,0.15);
+}
+[data-theme="dark"] .chord-card--maj { border-top: 2px solid var(--color-maj); }
+[data-theme="dark"] .chord-card--min { border-top: 2px solid var(--color-min); }
+[data-theme="dark"] .chord-card--dim { border-top: 2px solid var(--color-dim); }
+[data-theme="dark"] .prog-slot--filled {
+  background: #111;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.6), 0 0 4px rgba(244,124,32,0.06);
+  border-color: #333;
+}
+[data-theme="dark"] .arc-major.selected {
+  filter: drop-shadow(0 0 14px rgba(244,124,32,0.7));
+}
+
+/* ── Next Chord Suggestions ──────────────────────────────── */
+.next-chord-strip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+  padding: 6px 0 2px;
+}
+.next-chord-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+  flex-shrink: 0;
+}
+@keyframes pill-enter {
+  from { opacity: 0; transform: translateX(-8px) scale(0.9); }
+  to   { opacity: 1; transform: translateX(0) scale(1); }
+}
+.next-chord-pill {
+  animation: pill-enter 0.2s cubic-bezier(0.2,0,0,1) both;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-family: var(--font);
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--muted);
+  color: var(--foreground);
+  box-shadow: 0 2px 0 var(--btn-shadow);
+  transition: transform 0.08s ease, box-shadow 0.08s ease, background-color 0.12s;
+  white-space: nowrap;
+}
+.next-chord-pill:hover {
+  background: var(--btn-face-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 0 var(--btn-shadow);
+}
+.next-chord-pill:active { transform: translateY(1px); box-shadow: 0 1px 0 var(--btn-shadow); }
+.next-chord-pill--maj .pill-roman { color: var(--color-maj); }
+.next-chord-pill--min .pill-roman { color: var(--color-min); }
+.next-chord-pill--dim .pill-roman { color: var(--color-dim); }
+.pill-roman { font-size: 10px; }
+
+/* ── Theory Guide Modal ───────────────────────────────────── */
+.modal--theory {
+  max-width: 520px;
+  max-height: 80vh;
+  overflow-y: auto;
+  text-align: left;
+}
+.theory-section {
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+.theory-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+.theory-section p { font-size: 12px; line-height: 1.7; color: var(--foreground); }
+.theory-h4 {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--primary);
+  margin-bottom: 10px;
+}
+.theory-numeral-grid {
+  display: grid;
+  grid-template-columns: 38px 1fr;
+  gap: 6px 12px;
+  align-items: center;
+  margin-top: 10px;
+  font-size: 12px;
+}
+.tn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 28px;
+  border-radius: var(--radius);
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid var(--border);
+  background: var(--muted);
+}
+.tn--maj { color: var(--color-maj); }
+.tn--min { color: var(--color-min); }
+.tn--dim { color: var(--color-dim); }
+.theory-accent-orange { color: var(--color-maj); font-weight: 700; }
+.theory-accent-green  { color: #4aaa60; font-weight: 700; }
+.theory-accent-blue   { color: var(--color-min); font-weight: 700; }
+.theory-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  margin-top: 10px;
+}
+.theory-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.theory-table tr:last-child td { border-bottom: none; }
+.theory-table td:first-child {
+  font-weight: 700;
+  color: var(--primary);
+  white-space: nowrap;
+  padding-right: 14px;
+  width: 44%;
+}
+.theory-modal-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 16px;
+  letter-spacing: -0.5px;
+}
+
+/* ? info button */
+.btn--icon-xs {
+  width: 20px;
+  height: 20px;
+  font-size: 11px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--btn-face);
+  color: var(--muted-foreground);
+  cursor: pointer;
+  vertical-align: middle;
+  margin-left: 6px;
+  box-shadow: 0 1px 0 var(--btn-shadow);
+  font-family: var(--font);
+  font-weight: 700;
+  transition: color 0.12s, border-color 0.12s;
+}
+.btn--icon-xs:hover { color: var(--primary); border-color: var(--primary); }
+
   </style>
 </head>
 <body>
@@ -964,8 +1153,8 @@ body {
     <section class="panel panel--circle" aria-label="Circle of Fifths">
       <svg id="circle-svg"
            viewBox="-200 -200 400 400"
-           width="460" height="460"
-           aria-label="Interactive Circle of Fifths"></svg>
+           width="500" height="500"
+           aria-label="Interactive Circle of Fifths — click outer ring for major key, inner ring for minor key"></svg>
     </section>
 
     <div class="panel-stack">
@@ -982,12 +1171,16 @@ body {
           </div>
         </div>
         <div class="progression-slots" id="progression-slots" aria-live="polite"></div>
+        <div class="next-chord-strip" id="next-chord-strip" style="display:none" aria-live="polite">
+          <span class="next-chord-label">Next:</span>
+          <div class="next-chord-pills" id="next-chord-pills"></div>
+        </div>
         <p class="progression-hint" id="progression-hint">Click a chord above, or hit Generate to auto-build a progression.</p>
         <div class="explanation-panel" id="explanation-panel" style="display:none" aria-live="polite"></div>
       </section>
 
       <section class="panel panel--chords" aria-live="polite">
-        <h2 class="panel-title">Diatonic Chords <span id="key-label"></span></h2>
+        <h2 class="panel-title">Diatonic Chords <span id="key-label"></span><button class="btn--icon-xs" id="btn-theory-help" title="Open music theory guide — Roman numerals, circle connections, common progressions">?</button></h2>
         <div class="chord-grid" id="chord-grid">
           <p class="placeholder">Click a key on the circle to see its chords.</p>
         </div>
@@ -1015,11 +1208,56 @@ body {
     </div>
   </div>
 
+  <div class="modal-overlay" id="theory-modal-overlay" hidden role="presentation">
+    <div class="modal modal--theory" role="dialog" aria-modal="true" aria-labelledby="theory-modal-heading">
+      <button class="modal-close" id="theory-modal-close" aria-label="Close theory guide">&#x2715;</button>
+      <h3 class="theory-modal-title" id="theory-modal-heading">Theory Guide</h3>
+
+      <div class="theory-section">
+        <h4 class="theory-h4">Roman Numerals — I, ii, IV, V…</h4>
+        <p>Each number represents a <strong>scale degree</strong>. <strong>UPPERCASE = major chord, lowercase = minor</strong>, ° = diminished. The same progression (e.g. I–V–vi–IV) works in any key.</p>
+        <div class="theory-numeral-grid">
+          <span class="tn tn--maj">I</span><span><strong>Tonic</strong> — home base, most stable</span>
+          <span class="tn tn--min">ii</span><span><strong>Supertonic</strong> — mild tension, leads to V</span>
+          <span class="tn tn--min">iii</span><span><strong>Mediant</strong> — emotional colour, used sparingly</span>
+          <span class="tn tn--maj">IV</span><span><strong>Subdominant</strong> — warm, stable, contra-home</span>
+          <span class="tn tn--maj">V</span><span><strong>Dominant</strong> — strong pull back to I (tension)</span>
+          <span class="tn tn--min">vi</span><span><strong>Submediant</strong> — emotional relative minor of I</span>
+          <span class="tn tn--dim">vii°</span><span><strong>Leading tone</strong> — maximum tension, wants to resolve</span>
+        </div>
+      </div>
+
+      <div class="theory-section">
+        <h4 class="theory-h4">How the Circle Visualises This</h4>
+        <p>When you select a key, the <span class="theory-accent-orange">orange</span> arc is your <strong>I chord</strong> (home). The <span class="theory-accent-green">green</span> arc clockwise is your <strong>V chord</strong> (dominant — creates tension). The <span class="theory-accent-blue">blue</span> arc counter-clockwise is your <strong>IV chord</strong> (subdominant — warm and stable).</p>
+        <p style="margin-top:8px">Moving <em>counter-clockwise</em> (IV→I→V) resolves tension. Moving <em>clockwise</em> (I→V) builds tension. Jazz uses ii→V→I — three steps counter-clockwise. The circle makes this <em>geography</em> visible.</p>
+      </div>
+
+      <div class="theory-section">
+        <h4 class="theory-h4">Why Major Chords Are Visually Brighter</h4>
+        <p>The <strong>outer (major) ring</strong> uses bolder colours because major keys are the traditional "tonal centres" of Western harmony — they're the primary harmonic home. Minor chords (inner ring) are secondary — emotionally darker, used for contrast or depth. The visual weight mirrors the harmonic weight.</p>
+        <p style="margin-top:8px"><strong>Tip:</strong> Click the inner ring to switch to a minor key perspective. The chord grid recalculates with minor Roman numerals (i, ii°, III, iv, v, VI, VII) and the natural minor scale.</p>
+      </div>
+
+      <div class="theory-section">
+        <h4 class="theory-h4">Common Progressions to Try</h4>
+        <table class="theory-table">
+          <tr><td>I – IV – V – I</td><td>Blues backbone, folk, country — pure primary chords</td></tr>
+          <tr><td>I – V – vi – IV</td><td>Pop anthem (Let It Be, No Woman No Cry, countless more)</td></tr>
+          <tr><td>ii – V – I</td><td>Jazz turnaround — three steps counter-clockwise on the circle</td></tr>
+          <tr><td>i – VI – III – VII</td><td>Epic/cinematic minor — Game of Thrones energy</td></tr>
+          <tr><td>i – iv – VII – III</td><td>Andalusian descent — flamenco &amp; Spanish classical</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
   <script>
     var AppState = {
       currentKey:      null,
       currentKeyIndex: null,
       currentChords:   [],
+      currentIsMinor:  false,
       isLefty:         true,
     };
   </script>
@@ -1138,6 +1376,61 @@ function getDiatonicChords(key) {
       modeIndex:       degree,
       modeName:        MODE_NAMES[degree],
       modeDescription: MODE_FEEL[MODE_NAMES[degree]],
+      modeColor:       MODE_COLORS[degree],
+      voicingKey:      voicingKey
+    };
+  });
+}
+
+// ---------------------------------------------------------------
+// Natural minor (Aeolian) scale data
+// ---------------------------------------------------------------
+var MINOR_INTERVALS = [0, 2, 3, 5, 7, 8, 10];
+var MINOR_QUALITIES = ['min', 'dim', 'maj', 'min', 'min', 'maj', 'maj'];
+var MINOR_ROMANS    = ['i', 'ii\u00b0', 'III', 'iv', 'v', 'VI', 'VII'];
+var MINOR_MODE_NAMES = ['Aeolian', 'Locrian', 'Ionian', 'Dorian', 'Phrygian', 'Lydian', 'Mixolydian'];
+
+// ---------------------------------------------------------------
+// getDiatonicChordsMinor(minorKey)
+// Returns 7 chord descriptor objects for a natural minor key.
+// Spelling follows the relative major key (correct flats/sharps).
+// ---------------------------------------------------------------
+function getDiatonicChordsMinor(minorKey) {
+  var circleIndex = REL_MINORS.indexOf(minorKey);
+  if (circleIndex === -1) return [];
+  var relativeMajor = CIRCLE[circleIndex]; // used for flat/sharp spelling
+
+  var minorRoot = minorKey.replace(/m$/, '');
+  var normalized = normalizeKey(minorRoot);
+  var rootIndex = CHROMATIC.indexOf(normalized);
+  if (rootIndex === -1) return [];
+
+  return MINOR_INTERVALS.map(function(interval, degree) {
+    var noteIndex = (rootIndex + interval) % 12;
+    var rootNote  = noteNameForKey(noteIndex, relativeMajor);
+    var quality   = MINOR_QUALITIES[degree];
+
+    var chordName;
+    if (quality === 'min') {
+      chordName = rootNote + 'm';
+    } else if (quality === 'dim') {
+      chordName = rootNote + '\u00b0';
+    } else {
+      chordName = rootNote;
+    }
+
+    var voicingKey = quality === 'dim' ? rootNote + 'dim' : chordName;
+    var modeName = MINOR_MODE_NAMES[degree];
+
+    return {
+      degree:          degree + 1,
+      roman:           MINOR_ROMANS[degree],
+      chordName:       chordName,
+      rootNote:        rootNote,
+      quality:         quality,
+      modeIndex:       degree,
+      modeName:        modeName,
+      modeDescription: MODE_FEEL[modeName] || '',
       modeColor:       MODE_COLORS[degree],
       voicingKey:      voicingKey
     };
@@ -1357,6 +1650,40 @@ function createArcLabel(r, angleDeg, text, cssClass) {
 // Draws all 24 arc segments + labels into the SVG.
 // Called once on page load.
 // ---------------------------------------------------------------
+// ---------------------------------------------------------------
+// makePill(pos, index, ringType)
+// Creates an SVG <g> hover-pill (orange + button) for adding chords.
+// ---------------------------------------------------------------
+function makePill(pos, index, ringType) {
+  var g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+  g.setAttribute('class', 'arc-add-pill');
+  g.dataset.index    = index;
+  g.dataset.ringType = ringType;
+
+  var bg = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  bg.setAttribute('cx', pos.x);
+  bg.setAttribute('cy', pos.y);
+  bg.setAttribute('r', ringType === 'major' ? '13' : '10');
+  bg.setAttribute('fill', 'var(--primary)');
+  bg.setAttribute('opacity', '0.92');
+  g.appendChild(bg);
+
+  var txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  txt.setAttribute('x', pos.x);
+  txt.setAttribute('y', pos.y);
+  txt.setAttribute('text-anchor', 'middle');
+  txt.setAttribute('dominant-baseline', 'central');
+  txt.setAttribute('fill', '#fff');
+  txt.setAttribute('font-size', ringType === 'major' ? '16' : '13');
+  txt.setAttribute('font-weight', '700');
+  txt.setAttribute('pointer-events', 'none');
+  txt.setAttribute('user-select', 'none');
+  txt.textContent = '+';
+  g.appendChild(txt);
+
+  return g;
+}
+
 function initCircle(svgEl) {
   // Clear any previous content
   while (svgEl.firstChild) svgEl.removeChild(svgEl.firstChild);
@@ -1376,96 +1703,135 @@ function initCircle(svgEl) {
   hubText.textContent = '5ths';
   svgEl.appendChild(hubText);
 
-  // Draw 12 major + 12 minor segments
+  // Draw 12 major + 12 minor segments, each wrapped in a <g> group
+  // for hover-pill and group-level hover effects.
   for (var i = 0; i < 12; i++) {
-    // Each key occupies 30°. Key 0 (C) is at the top (−90°).
-    // Segment spans ±15° around each key's center angle.
     var midAngle   = i * 30 - 90;
     var startAngle = midAngle - 15;
     var endAngle   = midAngle + 15;
+    var majorKey   = CIRCLE[i];
+    var minorKey   = REL_MINORS[i];
 
-    var majorKey = CIRCLE[i];
-    var minorKey = REL_MINORS[i];
+    // --- Major ring group ---
+    var majGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    majGroup.setAttribute('class', 'arc-group arc-group--major');
 
-    // --- Major ring segment ---
     var majorArc = createArcPath(CIRCLE_MID_R, CIRCLE_OUTER_R, startAngle, endAngle);
     majorArc.setAttribute('class', 'arc-major');
     majorArc.dataset.index    = i;
     majorArc.dataset.key      = majorKey;
     majorArc.dataset.ringType = 'major';
-    svgEl.appendChild(majorArc);
+    majGroup.appendChild(majorArc);
 
-    // Major label
     var majorLabel = createArcLabel(CIRCLE_LABEL_MAJ, midAngle, majorKey, 'arc-label-major');
     majorLabel.dataset.index    = i;
     majorLabel.dataset.ringType = 'major';
-    svgEl.appendChild(majorLabel);
+    majGroup.appendChild(majorLabel);
 
-    // --- Minor ring segment ---
+    // Hover pill — at same position as label (label fades on group hover)
+    majGroup.appendChild(makePill(polarToXY(CIRCLE_LABEL_MAJ, midAngle), i, 'major'));
+
+    svgEl.appendChild(majGroup);
+
+    // --- Minor ring group ---
+    var minGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    minGroup.setAttribute('class', 'arc-group arc-group--minor');
+
     var minorArc = createArcPath(CIRCLE_INNER_R, CIRCLE_MID_R, startAngle, endAngle);
     minorArc.setAttribute('class', 'arc-minor');
     minorArc.dataset.index    = i;
     minorArc.dataset.key      = minorKey;
     minorArc.dataset.ringType = 'minor';
-    svgEl.appendChild(minorArc);
+    minGroup.appendChild(minorArc);
 
-    // Minor label
     var minorLabel = createArcLabel(CIRCLE_LABEL_MIN, midAngle, minorKey, 'arc-label-minor');
     minorLabel.dataset.index    = i;
     minorLabel.dataset.ringType = 'minor';
-    svgEl.appendChild(minorLabel);
+    minGroup.appendChild(minorLabel);
+
+    // Hover pill — at same position as minor label
+    minGroup.appendChild(makePill(polarToXY(CIRCLE_LABEL_MIN, midAngle), i, 'minor'));
+
+    svgEl.appendChild(minGroup);
   }
 
-  // Attach single delegated click handler on the SVG
+  // Delegated click handler
   svgEl.addEventListener('click', function(e) {
     var target = e.target;
+
+    // Check if a hover-pill was clicked (add chord, keep key context)
+    var pill = target.closest ? target.closest('.arc-add-pill') : null;
+    if (pill && pill.dataset.index !== undefined) {
+      svgEl.dispatchEvent(new CustomEvent('chordAddedFromCircle', {
+        detail: {
+          circleIndex: parseInt(pill.dataset.index, 10),
+          isMinor:     pill.dataset.ringType === 'minor'
+        },
+        bubbles: true
+      }));
+      return;
+    }
+
+    // Regular arc or label click — select key (dual action: also adds tonic)
     var index = target.dataset && target.dataset.index;
     if (index === undefined || index === null || index === '') return;
-    selectKey(svgEl, parseInt(index, 10));
+    var isMinor = target.dataset.ringType === 'minor';
+    selectKey(svgEl, parseInt(index, 10), isMinor);
   });
 }
 
 // ---------------------------------------------------------------
-// selectKey(svgEl, circleIndex)
-// Updates visual state of all segments and dispatches keySelected.
+// selectKey(svgEl, circleIndex, isMinor)
+// Updates visual state and dispatches keySelected.
+// isMinor=true → select only the inner (minor) ring arc.
+// isMinor=false → select both rings (major + relative minor).
 // ---------------------------------------------------------------
-function selectKey(svgEl, circleIndex) {
+function selectKey(svgEl, circleIndex, isMinor) {
   var neighbors = getNeighborIndices(circleIndex);
 
-  // Reset all segments
-  var allMajor = svgEl.querySelectorAll('.arc-major, .arc-label-major');
-  var allMinor = svgEl.querySelectorAll('.arc-minor, .arc-label-minor');
-
-  allMajor.forEach(function(el) {
-    el.classList.remove('selected', 'neighbor-fifth', 'neighbor-fourth');
-  });
-  allMinor.forEach(function(el) {
+  // Reset all arc/label classes
+  svgEl.querySelectorAll('.arc-major, .arc-label-major, .arc-minor, .arc-label-minor').forEach(function(el) {
     el.classList.remove('selected', 'neighbor-fifth', 'neighbor-fourth');
   });
 
-  // Apply selected state to the clicked key
-  svgEl.querySelectorAll('[data-index="' + circleIndex + '"]').forEach(function(el) {
-    el.classList.add('selected');
-  });
+  // Apply selected state
+  if (isMinor) {
+    // Minor selection: highlight only the inner ring arc at this index
+    svgEl.querySelectorAll(
+      '.arc-minor[data-index="' + circleIndex + '"], ' +
+      '.arc-label-minor[data-index="' + circleIndex + '"]'
+    ).forEach(function(el) { el.classList.add('selected'); });
+  } else {
+    // Major selection: highlight both rings (major + relative minor)
+    svgEl.querySelectorAll(
+      '.arc-major[data-index="' + circleIndex + '"], ' +
+      '.arc-label-major[data-index="' + circleIndex + '"], ' +
+      '.arc-minor[data-index="' + circleIndex + '"], ' +
+      '.arc-label-minor[data-index="' + circleIndex + '"]'
+    ).forEach(function(el) { el.classList.add('selected'); });
+  }
 
-  // Apply neighbor-fifth (dominant, clockwise)
-  svgEl.querySelectorAll('[data-index="' + neighbors.fifth + '"].arc-major, ' +
-                         '[data-index="' + neighbors.fifth + '"].arc-label-major').forEach(function(el) {
-    el.classList.add('neighbor-fifth');
-  });
+  // Neighbor-fifth (dominant, clockwise) — always highlight on major ring
+  svgEl.querySelectorAll(
+    '.arc-major[data-index="' + neighbors.fifth + '"], ' +
+    '.arc-label-major[data-index="' + neighbors.fifth + '"]'
+  ).forEach(function(el) { el.classList.add('neighbor-fifth'); });
 
-  // Apply neighbor-fourth (subdominant, counter-clockwise)
-  svgEl.querySelectorAll('[data-index="' + neighbors.fourth + '"].arc-major, ' +
-                         '[data-index="' + neighbors.fourth + '"].arc-label-major').forEach(function(el) {
-    el.classList.add('neighbor-fourth');
-  });
+  // Neighbor-fourth (subdominant, counter-clockwise)
+  svgEl.querySelectorAll(
+    '.arc-major[data-index="' + neighbors.fourth + '"], ' +
+    '.arc-label-major[data-index="' + neighbors.fourth + '"]'
+  ).forEach(function(el) { el.classList.add('neighbor-fourth'); });
 
-  // Dispatch custom event with the selected index
-  var evt = new CustomEvent('keySelected', {
-    detail: { circleIndex: circleIndex, key: CIRCLE[circleIndex] },
+  // Dispatch event
+  svgEl.dispatchEvent(new CustomEvent('keySelected', {
+    detail: {
+      circleIndex: circleIndex,
+      key:         isMinor ? REL_MINORS[circleIndex] : CIRCLE[circleIndex],
+      isMinor:     !!isMinor
+    },
     bubbles: true
-  });
-  svgEl.dispatchEvent(evt);
+  }));
 }
 
   </script>
@@ -1483,11 +1849,15 @@ function selectKey(svgEl, circleIndex) {
 // Each card: Roman numeral, chord name, mode name, Diagram button.
 // Clicking a card triggers addToProgression (progression.js).
 // ---------------------------------------------------------------
-function renderChordGrid(chords, keyName) {
+function renderChordGrid(chords, keyName, isMinor) {
   var grid = document.getElementById('chord-grid');
   var keyLabel = document.getElementById('key-label');
 
-  keyLabel.textContent = '— ' + keyName + ' Major';
+  if (isMinor) {
+    keyLabel.textContent = '\u2014 ' + keyName.replace(/m$/, '') + ' minor';
+  } else {
+    keyLabel.textContent = '\u2014 ' + keyName + ' Major';
+  }
   grid.innerHTML = '';
 
   chords.forEach(function(chord, idx) {
@@ -1667,6 +2037,9 @@ function renderProgression() {
       removeFromProgression(parseInt(btn.dataset.index, 10));
     });
   });
+
+  // Update next-chord suggestions after render
+  updateNextSuggestions();
 }
 
 // ---------------------------------------------------------------
@@ -1677,6 +2050,65 @@ function updateProgressionHint() {
   var hint = document.getElementById('progression-hint');
   if (!hint) return;
   hint.style.display = _progression.length === 0 ? 'block' : 'none';
+}
+
+// ---------------------------------------------------------------
+// Next chord suggestion rules — 0-based indices into currentChords
+// (0=I/i, 1=ii/ii°, 2=iii/III, 3=IV/iv, 4=V/v, 5=vi/VI, 6=vii°/VII)
+// ---------------------------------------------------------------
+var NEXT_CHORD_RULES = {
+  // Major key
+  'I':    [3, 4, 5, 1],    // IV, V, vi, ii
+  'ii':   [4, 0, 3],       // V, I, IV
+  'iii':  [3, 5, 0],       // IV, vi, I
+  'IV':   [0, 4, 1],       // I, V, ii
+  'V':    [0, 5, 3],       // I, vi, IV
+  'vi':   [1, 3, 0, 4],    // ii, IV, I, V
+  'vii\u00b0': [0],        // I
+  // Natural minor key
+  'i':    [3, 4, 5, 6],    // iv, v, VI, VII
+  'ii\u00b0': [4, 0],      // v, i
+  'III':  [5, 6, 0],       // VI, VII, i
+  'iv':   [0, 4, 6],       // i, v, VII
+  'v':    [0, 5, 3],       // i, VI, iv
+  'VI':   [2, 6, 0],       // III, VII, i
+  'VII':  [0, 2, 5]        // i, III, VI
+};
+
+function getSuggestedNextChords() {
+  if (!_progression.length || !AppState.currentChords.length) return [];
+  var lastRoman = _progression[_progression.length - 1].roman;
+  var indices = NEXT_CHORD_RULES[lastRoman] || [];
+  return indices
+    .map(function(idx) { return AppState.currentChords[idx]; })
+    .filter(function(c) { return !!c; });
+}
+
+function updateNextSuggestions() {
+  var strip = document.getElementById('next-chord-strip');
+  var pills = document.getElementById('next-chord-pills');
+  if (!strip || !pills) return;
+
+  if (!_progression.length || _progression.length >= MAX_SLOTS) {
+    strip.style.display = 'none';
+    return;
+  }
+
+  var sugs = getSuggestedNextChords();
+  if (!sugs.length) { strip.style.display = 'none'; return; }
+
+  pills.innerHTML = '';
+  sugs.slice(0, 4).forEach(function(chord, i) {
+    var pill = document.createElement('button');
+    pill.className = 'next-chord-pill next-chord-pill--' + chord.quality;
+    pill.dataset.chordIndex = AppState.currentChords.indexOf(chord);
+    pill.innerHTML =
+      '<span class="pill-roman">' + chord.roman + '</span> ' + chord.chordName;
+    pill.title = 'Add ' + chord.chordName + ' to progression';
+    pill.style.animationDelay = (i * 0.05) + 's';
+    pills.appendChild(pill);
+  });
+  strip.style.display = 'flex';
 }
 
   </script>
@@ -2330,19 +2762,35 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // ── Event: key selected on circle ──────────────────────────
   circleSvg.addEventListener('keySelected', function(e) {
-    var key   = e.detail.key;
-    var index = e.detail.circleIndex;
+    var key     = e.detail.key;
+    var index   = e.detail.circleIndex;
+    var isMinor = !!e.detail.isMinor;
 
     AppState.currentKey      = key;
     AppState.currentKeyIndex = index;
-    AppState.currentChords   = getDiatonicChords(key);
+    AppState.currentIsMinor  = isMinor;
 
-    document.getElementById('header-key').textContent = key + ' Major';
-    renderChordGrid(AppState.currentChords, key);
+    if (isMinor) {
+      AppState.currentChords = getDiatonicChordsMinor(key);
+      document.getElementById('header-key').textContent = key.replace(/m$/, '') + ' minor';
+      renderChordGrid(AppState.currentChords, key, true);
+    } else {
+      AppState.currentChords = getDiatonicChords(key);
+      document.getElementById('header-key').textContent = key + ' Major';
+      renderChordGrid(AppState.currentChords, key, false);
+    }
     renderModeList(AppState.currentChords);
-
-    // Clear explanation when key changes
     renderExplanation(null);
+
+    // Dual action: add the tonic chord to the progression automatically
+    var tonic = AppState.currentChords[0];
+    if (tonic) addToProgression(tonic);
+  });
+
+  // ── Event: chord added directly from circle (hover pill) ───
+  circleSvg.addEventListener('chordAddedFromCircle', function(e) {
+    var chord = buildChordFromCirclePos(e.detail.circleIndex, e.detail.isMinor);
+    if (chord) addToProgression(chord);
   });
 
   // ── Event: chord card clicked (add to progression) ─────────
@@ -2470,10 +2918,62 @@ document.addEventListener('DOMContentLoaded', function() {
     if (e.target === e.currentTarget) closeDiagramModal();
   });
   document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') closeDiagramModal();
+    if (e.key === 'Escape') {
+      closeDiagramModal();
+      var tm = document.getElementById('theory-modal-overlay');
+      if (tm) tm.hidden = true;
+    }
+  });
+
+  // ── Event: Theory guide modal ───────────────────────────────
+  document.getElementById('btn-theory-help').addEventListener('click', function() {
+    document.getElementById('theory-modal-overlay').hidden = false;
+  });
+  document.getElementById('theory-modal-close').addEventListener('click', function() {
+    document.getElementById('theory-modal-overlay').hidden = true;
+  });
+  document.getElementById('theory-modal-overlay').addEventListener('click', function(e) {
+    if (e.target === e.currentTarget) e.currentTarget.hidden = true;
+  });
+
+  // ── Event: Next-chord suggestion pills ─────────────────────
+  document.getElementById('next-chord-strip').addEventListener('click', function(e) {
+    var pill = e.target.closest('.next-chord-pill');
+    if (!pill) return;
+    var idx = parseInt(pill.dataset.chordIndex, 10);
+    var chord = AppState.currentChords[idx];
+    if (!chord) return;
+    addToProgression(chord);
   });
 
 });
+
+// ── Circle chord builder helper ────────────────────────────────
+// Builds a chord descriptor from a circle position.
+// If the chord is diatonic to the current key, returns that descriptor
+// (with correct Roman numeral). Otherwise returns a standalone descriptor.
+function buildChordFromCirclePos(circleIdx, isMinor) {
+  var targetName = isMinor ? REL_MINORS[circleIdx] : CIRCLE[circleIdx];
+  // Search current diatonic context first
+  for (var i = 0; i < AppState.currentChords.length; i++) {
+    if (AppState.currentChords[i].chordName === targetName) {
+      return AppState.currentChords[i];
+    }
+  }
+  // Not diatonic to current key — build standalone descriptor
+  return {
+    roman:           isMinor ? 'i' : 'I',
+    chordName:       targetName,
+    quality:         isMinor ? 'min' : 'maj',
+    modeName:        isMinor ? 'Aeolian' : 'Ionian',
+    modeDescription: '',
+    modeColor:       isMinor ? '#6b7280' : '#f59e0b',
+    voicingKey:      targetName,
+    degree:          1,
+    rootNote:        isMinor ? targetName.replace(/m$/, '') : targetName,
+    modeIndex:       0
+  };
+}
 
 // ── Handedness helpers ─────────────────────────────────────────
 
