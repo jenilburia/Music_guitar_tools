@@ -2,6 +2,8 @@
    app.js — Main controller
    Wires all modules together on DOMContentLoaded.
    Also contains the chord diagram SVG renderer.
+   v2: wires fretboard, modes panel, progression library,
+       practice mode, borrowed chords, analysis panel.
    ============================================================= */
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -21,6 +23,20 @@ document.addEventListener('DOMContentLoaded', function() {
   initCircle(circleSvg);
   renderProgression();
   updateProgressionHint();
+  renderAnalysisPanel();
+
+  // v2 modules
+  initFretboard();
+  initModeRelPanel();
+  initProgressionLib();
+  initPracticeMode();
+  initBorrowedToggle();
+
+  // Hide v2 sections until a key is selected
+  var fretSection    = document.getElementById('fretboard-section');
+  var modeRelSection = document.getElementById('mode-rel-section');
+  if (fretSection)    fretSection.style.display = 'none';
+  if (modeRelSection) modeRelSection.style.display = 'none';
 
   // ── Event: key selected on circle ──────────────────────────
   circleSvg.addEventListener('keySelected', function(e) {
@@ -30,6 +46,11 @@ document.addEventListener('DOMContentLoaded', function() {
     AppState.currentKey      = key;
     AppState.currentKeyIndex = index;
     AppState.currentChords   = getDiatonicChords(key);
+    // Default fretboard root to current key
+    AppState.fretboardRootNote = key;
+    // Reset mode to Ionian on new key selection
+    AppState.currentMode = 0;
+    AppState.currentPosition = 'all';
 
     document.getElementById('header-key').textContent = key + ' Major';
     renderChordGrid(AppState.currentChords, key);
@@ -37,6 +58,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Clear explanation when key changes
     renderExplanation(null);
+
+    // v2: update fretboard and related panels
+    var fbKeyLabel = document.getElementById('fb-key-label');
+    if (fbKeyLabel) fbKeyLabel.textContent = '— ' + key + ' Major';
+    renderFretboard();
+    renderModeRelPanel();
+
+    // Update progression library (to enable load buttons)
+    renderProgressionLib();
   });
 
   // ── Event: chord card clicked (add to progression) ─────────
@@ -44,7 +74,20 @@ document.addEventListener('DOMContentLoaded', function() {
     if (e.target.matches('.btn-diagram') || e.target.closest('.btn-diagram')) return;
     if (e.target.matches('.btn-play-chord') || e.target.closest('.btn-play-chord')) return;
 
-    var card = e.target.closest('.chord-card');
+    // Check if it's a borrowed chord card
+    var card = e.target.closest('.chord-card--borrowed');
+    if (card) {
+      var borrowedIdx = parseInt(card.dataset.borrowedIndex, 10);
+      var borrowedChords = getParallelMinorChords(AppState.currentKey);
+      if (borrowedChords[borrowedIdx]) {
+        addToProgression(borrowedChords[borrowedIdx]);
+        card.classList.add('active');
+        setTimeout(function() { card.classList.remove('active'); }, 350);
+      }
+      return;
+    }
+
+    card = e.target.closest('.chord-card');
     if (!card) return;
 
     var idx   = parseInt(card.dataset.chordIndex, 10);
@@ -92,6 +135,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // ── Event: Mode row clicked (generate mode-specific) ───────
   document.getElementById('mode-list').addEventListener('click', function(e) {
+    // Don't trigger if clicking wild toggle or inside wild section
+    if (e.target.closest('.btn-wild-toggle') || e.target.closest('.mode-wild')) return;
+
     var row = e.target.closest('.mode-row');
     if (!row || !row.dataset.modeName) return;
     if (!AppState.currentKey) return;
@@ -159,6 +205,8 @@ document.addEventListener('DOMContentLoaded', function() {
     AppState.isLefty = !AppState.isLefty;
     localStorage.setItem('handedness', AppState.isLefty ? 'left' : 'right');
     updateHandednessUI();
+    // Re-render fretboard for handedness change
+    renderFretboard();
   });
 
   // ── Event: Close modal ──────────────────────────────────────

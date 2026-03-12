@@ -144,3 +144,118 @@ function getNeighborIndices(circleIndex) {
     // relativeMinor is same index on inner ring — handled in circle.js
   };
 }
+
+// ---------------------------------------------------------------
+// getModeStepFormula(modeIndex)
+// Returns string like "W W H W W W H" for a given mode index
+// ---------------------------------------------------------------
+function getModeStepFormula(modeIndex) {
+  // Ionian step pattern: W W H W W W H (semitones: 2 2 1 2 2 2 1)
+  var ionianSteps = [2, 2, 1, 2, 2, 2, 1];
+  var steps = [];
+  for (var i = 0; i < 7; i++) {
+    var rotated = ionianSteps[(i + modeIndex) % 7];
+    steps.push(rotated === 2 ? 'W' : 'H');
+  }
+  return steps;
+}
+
+// ---------------------------------------------------------------
+// getModeIntervalLabels(modeIndex)
+// Returns array of interval label strings with accidentals
+// e.g. ['1','2','♭3','4','5','6','♭7'] for Dorian
+// ---------------------------------------------------------------
+function getModeIntervalLabels(modeIndex) {
+  // Build by comparing mode scale intervals to major scale intervals
+  var modeScaleIntervals = rotateIntervalsForMode(MAJOR_INTERVALS, modeIndex);
+  var majorIntervals = MAJOR_INTERVALS;
+  var degreeNames = ['1','2','3','4','5','6','7'];
+
+  return modeScaleIntervals.map(function(iv, i) {
+    var diff = iv - majorIntervals[i];
+    if (diff === 0)  return degreeNames[i];
+    if (diff === 1)  return '♯' + degreeNames[i];
+    if (diff === -1) return '♭' + degreeNames[i];
+    if (diff === 11) return '♭' + degreeNames[i]; // e.g. b2 wrapping
+    if (diff === -11) return '♯' + degreeNames[i];
+    return degreeNames[i];
+  });
+}
+
+// ---------------------------------------------------------------
+// rotateIntervalsForMode(intervals, modeIndex)
+// Returns the interval set of the given mode relative to its own root.
+// e.g. modeIndex=1 (Dorian) → [0,2,3,5,7,9,10]
+// ---------------------------------------------------------------
+function rotateIntervalsForMode(intervals, modeIndex) {
+  var offset = intervals[modeIndex];
+  var result = [];
+  for (var i = 0; i < intervals.length; i++) {
+    result.push((intervals[(i + modeIndex) % intervals.length] - offset + 12) % 12);
+  }
+  return result;
+}
+
+// ---------------------------------------------------------------
+// getModeNoteNames(key, modeIndex)
+// Returns the 7 note names of the mode starting from the
+// nth degree of the given major key
+// ---------------------------------------------------------------
+function getModeNoteNames(key, modeIndex) {
+  var normalized = normalizeKey(key);
+  var rootIdx = CHROMATIC.indexOf(normalized);
+  if (rootIdx === -1) return [];
+  var modeIntervals = rotateIntervalsForMode(MAJOR_INTERVALS, modeIndex);
+  return modeIntervals.map(function(iv) {
+    var pitchClass = (rootIdx + iv) % 12;
+    return noteNameForKey(pitchClass, key);
+  });
+}
+
+// ---------------------------------------------------------------
+// getParallelMinorChords(key)
+// Returns 7 chord objects for the natural minor (Aeolian) scale
+// built on the same root as the given major key.
+// Chord quality follows natural minor pattern:
+//   min, dim, maj, min, min, maj, maj
+// ---------------------------------------------------------------
+function getParallelMinorChords(key) {
+  var normalized = normalizeKey(key);
+  var rootIndex = CHROMATIC.indexOf(normalized);
+  if (rootIndex === -1) return [];
+
+  var MINOR_INTERVALS = [0, 2, 3, 5, 7, 8, 10]; // natural minor
+  var MINOR_QUALITIES = ['min','dim','maj','min','min','maj','maj'];
+  var MINOR_ROMANS    = ['i','ii°','III','iv','v','VI','VII'];
+
+  return MINOR_INTERVALS.map(function(interval, degree) {
+    var noteIndex = (rootIndex + interval) % 12;
+    var rootNote  = noteNameForKey(noteIndex, key);
+    var quality   = MINOR_QUALITIES[degree];
+
+    var chordName;
+    if (quality === 'min') {
+      chordName = rootNote + 'm';
+    } else if (quality === 'dim') {
+      chordName = rootNote + '°';
+    } else {
+      chordName = rootNote;
+    }
+
+    var voicingKey = quality === 'dim' ? rootNote + 'dim' : chordName;
+
+    return {
+      degree:    degree + 1,
+      roman:     MINOR_ROMANS[degree],
+      chordName: chordName,
+      rootNote:  rootNote,
+      quality:   quality,
+      modeIndex: degree,
+      modeName:  'Parallel Minor',
+      modeDescription: 'Borrowed from the parallel natural minor scale.',
+      modeColor: '#6b7280',
+      voicingKey: voicingKey,
+      borrowed:  true
+    };
+  });
+}

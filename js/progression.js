@@ -1,11 +1,72 @@
 /* =============================================================
    progression.js — Progression builder state and rendering
+   v2: + Harmonic function analysis panel (Feature 13)
+       + Practice mode integration
    ============================================================= */
 
 var MAX_SLOTS = 8;
 
 // Internal state: array of chord descriptor objects
 var _progression = [];
+
+// ---------------------------------------------------------------
+// Harmonic function classification by scale degree (0-based)
+// Tonic:       I(0), iii(2), vi(5)
+// Subdominant: ii(1), IV(3)
+// Dominant:    V(4), vii°(6)
+// ---------------------------------------------------------------
+var HARMONIC_FUNCTION = {
+  0: { label: 'Tonic',       cls: 'fn-tonic',       abbr: 'T' },
+  1: { label: 'Subdominant', cls: 'fn-subdominant',  abbr: 'SD' },
+  2: { label: 'Tonic',       cls: 'fn-tonic',        abbr: 'T' },
+  3: { label: 'Subdominant', cls: 'fn-subdominant',  abbr: 'SD' },
+  4: { label: 'Dominant',    cls: 'fn-dominant',     abbr: 'D' },
+  5: { label: 'Tonic',       cls: 'fn-tonic',        abbr: 'T' },
+  6: { label: 'Dominant',    cls: 'fn-dominant',     abbr: 'D' }
+};
+
+// Plain-English summary patterns (keyed by function sequence)
+function buildFunctionSummary(chords) {
+  if (!chords.length) return '';
+
+  var funcs = chords.map(function(c) {
+    var deg = c.modeIndex; // 0-based degree in parent key
+    if (c.borrowed) return 'B'; // borrowed chord
+    var fn = HARMONIC_FUNCTION[deg];
+    return fn ? fn.abbr : '?';
+  });
+
+  var sequence = funcs.join('-');
+
+  // Common patterns → plain English
+  var patterns = {
+    'T-D-T':      'Classic tonic–dominant–tonic. Stable, resolved.',
+    'T-SD-D':     'Perfect authentic cadence motion. Textbook resolved.',
+    'T-SD-D-T':   'Textbook I–IV–V–I. The foundation of Western harmony.',
+    'T-D-SD-T':   'Deceptive motion through the subdominant. Interesting and unresolved.',
+    'T-T-SD-D':   'Opens on tonic color, moves to subdominant then dominant for tension.',
+    'SD-D-T':     'ii–V–I jazz turnaround. Smooth pull to home.',
+    'T-SD-T-D':   'Circular progression mixing tonic and color chords.',
+    'D-SD-T-D':   'Starts with tension, relaxes through subdominant, then pushes again.',
+  };
+
+  if (patterns[sequence]) return patterns[sequence];
+
+  // Generic summary based on function counts
+  var counts = { T: 0, SD: 0, D: 0, B: 0 };
+  funcs.forEach(function(f) { if (counts[f] !== undefined) counts[f]++; });
+
+  var parts = [];
+  if (counts.T > 0) parts.push(counts.T + ' tonic');
+  if (counts.SD > 0) parts.push(counts.SD + ' subdominant');
+  if (counts.D > 0) parts.push(counts.D + ' dominant');
+  if (counts.B > 0) parts.push(counts.B + ' borrowed');
+
+  var last = funcs[funcs.length - 1];
+  var feeling = last === 'T' ? 'Resolves home.' : last === 'D' ? 'Ends with tension — wants to continue.' : 'Open-ended feel.';
+
+  return parts.join(', ') + ' chord' + (parts.length > 1 ? 's' : '') + '. ' + feeling;
+}
 
 // ---------------------------------------------------------------
 // addToProgression(chord)
@@ -16,6 +77,8 @@ function addToProgression(chord) {
   _progression.push(chord);
   renderProgression();
   updateProgressionHint();
+  renderAnalysisPanel();
+  if (typeof window.onProgressionChanged === 'function') window.onProgressionChanged();
 }
 
 // ---------------------------------------------------------------
@@ -26,6 +89,8 @@ function removeFromProgression(index) {
   _progression.splice(index, 1);
   renderProgression();
   updateProgressionHint();
+  renderAnalysisPanel();
+  if (typeof window.onProgressionChanged === 'function') window.onProgressionChanged();
 }
 
 // ---------------------------------------------------------------
@@ -35,6 +100,9 @@ function clearProgression() {
   _progression = [];
   renderProgression();
   updateProgressionHint();
+  renderAnalysisPanel();
+  if (typeof window.stopPractice === 'function') window.stopPractice();
+  if (typeof window.onProgressionChanged === 'function') window.onProgressionChanged();
 }
 
 // ---------------------------------------------------------------
@@ -46,6 +114,8 @@ function setProgression(chords) {
   _progression = chords.slice(0, MAX_SLOTS);
   renderProgression();
   updateProgressionHint();
+  renderAnalysisPanel();
+  if (typeof window.onProgressionChanged === 'function') window.onProgressionChanged();
 }
 
 // ---------------------------------------------------------------
@@ -79,7 +149,9 @@ function renderProgression() {
 
     if (_progression[i]) {
       var chord = _progression[i];
-      slot.className = 'prog-slot prog-slot--filled prog-slot--' + chord.quality;
+      var slotCls = 'prog-slot prog-slot--filled prog-slot--' + chord.quality;
+      if (chord.borrowed) slotCls += ' prog-slot--borrowed';
+      slot.className = slotCls;
       slot.dataset.slotIndex = i;
 
       var removeBtn = document.createElement('button');
@@ -102,10 +174,15 @@ function renderProgression() {
       nameEl.className = 'prog-name';
       nameEl.textContent = chord.chordName;
 
+      // Countdown bar for practice mode
+      var barEl = document.createElement('div');
+      barEl.className = 'prog-slot-bar';
+
       slot.appendChild(removeBtn);
       slot.appendChild(romanEl);
       slot.appendChild(nameEl);
       slot.appendChild(playBtn);
+      slot.appendChild(barEl);
     } else {
       slot.className = 'prog-slot prog-slot--empty';
     }
@@ -130,4 +207,39 @@ function updateProgressionHint() {
   var hint = document.getElementById('progression-hint');
   if (!hint) return;
   hint.style.display = _progression.length === 0 ? 'block' : 'none';
+}
+
+// ---------------------------------------------------------------
+// renderAnalysisPanel()
+// Renders the harmonic function analysis below the progression.
+// Only shows when 2+ chords are in the progression.
+// ---------------------------------------------------------------
+function renderAnalysisPanel() {
+  var panel = document.getElementById('analysis-panel');
+  if (!panel) return;
+
+  if (_progression.length < 2) {
+    panel.style.display = 'none';
+    panel.innerHTML = '';
+    return;
+  }
+
+  panel.style.display = 'block';
+
+  var chordsHtml = _progression.map(function(chord) {
+    var deg = chord.modeIndex;
+    var fn  = chord.borrowed ? { label: 'Borrowed', cls: 'fn-borrowed', abbr: 'B' } : (HARMONIC_FUNCTION[deg] || { label: '?', cls: '', abbr: '?' });
+    return '<div class="analysis-chord">' +
+      '<span class="analysis-chord-name">' + chord.chordName + '</span>' +
+      '<span class="analysis-fn ' + fn.cls + '">' + fn.label + '</span>' +
+    '</div>';
+  }).join('');
+
+  var summary = buildFunctionSummary(_progression);
+
+  panel.innerHTML =
+    '<div class="analysis-panel">' +
+      '<div class="analysis-chords-row">' + chordsHtml + '</div>' +
+      '<p class="analysis-summary">' + summary + '</p>' +
+    '</div>';
 }
