@@ -19,6 +19,17 @@ var FLAT_KEYS = ['F','Bb','Eb','Ab','Db','Gb'];
 // Intervals of the major scale (semitones from root)
 var MAJOR_INTERVALS = [0, 2, 4, 5, 7, 9, 11];
 
+// Parallel mode intervals — each row anchored to the same root
+var MODE_INTERVALS = [
+  [0, 2, 4, 5, 7, 9, 11],  // Ionian
+  [0, 2, 3, 5, 7, 9, 10],  // Dorian
+  [0, 1, 3, 5, 7, 8, 10],  // Phrygian
+  [0, 2, 4, 6, 7, 9, 11],  // Lydian
+  [0, 2, 4, 5, 7, 9, 10],  // Mixolydian
+  [0, 2, 3, 5, 7, 8, 10],  // Aeolian
+  [0, 1, 3, 5, 6, 8, 10],  // Locrian
+];
+
 // Diatonic chord qualities per scale degree
 var QUALITIES = ['maj','min','min','maj','maj','min','dim'];
 
@@ -36,7 +47,7 @@ var MODE_COLORS = [
   '#a78bfa',  // Lydian   — violet
   '#f97316',  // Mixolydian — orange
   '#6b7280',  // Aeolian  — gray
-  '#1f2937',  // Locrian  — near-black
+  '#4b5563',  // Locrian  — slate grey
 ];
 
 // Mode emotional descriptions — guitarist-focused language
@@ -219,6 +230,60 @@ function getModeNoteNames(key, modeIndex) {
 // Chord quality follows natural minor pattern:
 //   min, dim, maj, min, min, maj, maj
 // ---------------------------------------------------------------
+// ---------------------------------------------------------------
+// SCALE_DATA — non-modal scales for fretboard display
+// Each entry: name, shortName, intervals (semitones from root),
+//   intervalLabels, characterDegrees (0-based), feel, modeConnections,
+//   addNotesTo (null or base scale name), category
+// ---------------------------------------------------------------
+var SCALE_DATA = [
+  { name:'Minor Pentatonic', shortName:'Min Pent', intervals:[0,3,5,7,10],
+    intervalLabels:['1','♭3','4','5','♭7'], characterDegrees:[1],
+    feel:'The most-used scale in rock and blues. Five notes, no wrong notes. Start here.',
+    modeConnections:['Aeolian','Dorian'], addNotesTo:null, category:'pentatonic' },
+  { name:'Major Pentatonic', shortName:'Maj Pent', intervals:[0,2,4,7,9],
+    intervalLabels:['1','2','3','5','6'], characterDegrees:[1,4],
+    feel:'Bright, country, pop. Works over any major or dominant chord.',
+    modeConnections:['Ionian','Mixolydian'], addNotesTo:'Minor Pentatonic', category:'pentatonic' },
+  { name:'Blues Scale', shortName:'Blues', intervals:[0,3,5,6,7,10],
+    intervalLabels:['1','♭3','4','♭5','5','♭7'], characterDegrees:[3],
+    feel:'Minor Pent + the ♭5 blue note. That one note creates maximum tension and release.',
+    modeConnections:['Aeolian','Dorian'], addNotesTo:'Minor Pentatonic', category:'blues' },
+  { name:'Major Blues', shortName:'Maj Blues', intervals:[0,2,3,4,7,9],
+    intervalLabels:['1','2','♭3','3','5','6'], characterDegrees:[2],
+    feel:"Major Pent + ♭3 passing tone. Sounds like country and early rock'n'roll.",
+    modeConnections:['Ionian','Mixolydian'], addNotesTo:'Major Pentatonic', category:'blues' },
+  { name:'Harmonic Minor', shortName:'Harm Min', intervals:[0,2,3,5,7,8,11],
+    intervalLabels:['1','2','♭3','4','5','♭6','7'], characterDegrees:[5,6],
+    feel:'Aeolian with a raised 7th. Exotic, Spanish, neoclassical. Flamenco and metal.',
+    modeConnections:['Aeolian'], addNotesTo:'Aeolian', category:'minor' },
+  { name:'Melodic Minor', shortName:'Mel Min', intervals:[0,2,3,5,7,9,11],
+    intervalLabels:['1','2','♭3','4','5','6','7'], characterDegrees:[5,6],
+    feel:'Natural minor with raised 6th and 7th. Jazz and fusion. Smoother than Harmonic Minor.',
+    modeConnections:['Dorian','Aeolian'], addNotesTo:'Aeolian', category:'minor' },
+  { name:'Diminished W-H', shortName:'Dim W-H', intervals:[0,2,3,5,6,8,9,11],
+    intervalLabels:['1','2','♭3','4','♭5','♭6','6','7'], characterDegrees:[4,6],
+    feel:'8-note symmetrical scale. Repeats every minor 3rd. Jazz, neoclassical, horror.',
+    modeConnections:['Locrian'], addNotesTo:null, category:'symmetrical' },
+  { name:'Whole Tone', shortName:'W.Tone', intervals:[0,2,4,6,8,10],
+    intervalLabels:['1','2','3','♯4','♯5','♭7'], characterDegrees:[3,4],
+    feel:'6-note all-whole-steps scale. Dreamy, floating, unresolved. Debussy and altered jazz.',
+    modeConnections:['Lydian'], addNotesTo:null, category:'symmetrical' },
+];
+
+// ---------------------------------------------------------------
+// getScaleNoteNamesForScale(key, scaleIndex)
+// Returns note name strings for the given scale index and root key.
+// ---------------------------------------------------------------
+function getScaleNoteNamesForScale(key, scaleIndex) {
+  var normalized = normalizeKey(key);
+  var rootIdx = CHROMATIC.indexOf(normalized);
+  if (rootIdx === -1) return [];
+  return SCALE_DATA[scaleIndex].intervals.map(function(iv) {
+    return noteNameForKey((rootIdx + iv) % 12, key);
+  });
+}
+
 function getParallelMinorChords(key) {
   var normalized = normalizeKey(key);
   var rootIndex = CHROMATIC.indexOf(normalized);

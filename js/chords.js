@@ -199,6 +199,10 @@ function renderModeList(chords) {
         '<button class="btn-wild-toggle" data-target="' + wildSectionId + '" title="Show song references">' +
           '▶ In the Wild' +
         '</button>' +
+        '<button class="btn btn-load-mode-chords" data-mode-index="' + mi + '" ' +
+          'title="Load ' + chord.modeName + ' chords into progression builder">' +
+          'Load chords' +
+        '</button>' +
       '</div>' +
       '<span class="mode-generate-hint">Generate</span>';
 

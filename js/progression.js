@@ -141,60 +141,61 @@ function getProgressionString() {
 // Shows filled slots for chords, empty dashed slots for blanks.
 // ---------------------------------------------------------------
 function renderProgression() {
-  var container = document.getElementById('progression-slots');
-  container.innerHTML = '';
+  document.querySelectorAll('[data-progression-slots]').forEach(function(container) {
+    container.innerHTML = '';
 
-  for (var i = 0; i < MAX_SLOTS; i++) {
-    var slot = document.createElement('div');
+    for (var i = 0; i < MAX_SLOTS; i++) {
+      var slot = document.createElement('div');
 
-    if (_progression[i]) {
-      var chord = _progression[i];
-      var slotCls = 'prog-slot prog-slot--filled prog-slot--' + chord.quality;
-      if (chord.borrowed) slotCls += ' prog-slot--borrowed';
-      slot.className = slotCls;
-      slot.dataset.slotIndex = i;
+      if (_progression[i]) {
+        var chord = _progression[i];
+        var slotCls = 'prog-slot prog-slot--filled prog-slot--' + chord.quality;
+        if (chord.borrowed) slotCls += ' prog-slot--borrowed';
+        slot.className = slotCls;
+        slot.dataset.slotIndex = i;
 
-      var removeBtn = document.createElement('button');
-      removeBtn.className = 'prog-remove';
-      removeBtn.dataset.index = i;
-      removeBtn.title = 'Remove';
-      removeBtn.innerHTML = '&times;';
+        var removeBtn = document.createElement('button');
+        removeBtn.className = 'prog-remove';
+        removeBtn.dataset.index = i;
+        removeBtn.title = 'Remove';
+        removeBtn.innerHTML = '&times;';
 
-      var playBtn = document.createElement('button');
-      playBtn.className = 'prog-play';
-      playBtn.dataset.voicingKey = chord.voicingKey;
-      playBtn.title = 'Play ' + chord.chordName;
-      playBtn.innerHTML = '&#9654;';
+        var playBtn = document.createElement('button');
+        playBtn.className = 'prog-play';
+        playBtn.dataset.voicingKey = chord.voicingKey;
+        playBtn.title = 'Play ' + chord.chordName;
+        playBtn.innerHTML = '&#9654;';
 
-      var romanEl = document.createElement('span');
-      romanEl.className = 'prog-roman';
-      romanEl.textContent = chord.roman;
+        var romanEl = document.createElement('span');
+        romanEl.className = 'prog-roman';
+        romanEl.textContent = chord.roman;
 
-      var nameEl = document.createElement('span');
-      nameEl.className = 'prog-name';
-      nameEl.textContent = chord.chordName;
+        var nameEl = document.createElement('span');
+        nameEl.className = 'prog-name';
+        nameEl.textContent = chord.chordName;
 
-      // Countdown bar for practice mode
-      var barEl = document.createElement('div');
-      barEl.className = 'prog-slot-bar';
+        // Countdown bar for practice mode
+        var barEl = document.createElement('div');
+        barEl.className = 'prog-slot-bar';
 
-      slot.appendChild(removeBtn);
-      slot.appendChild(romanEl);
-      slot.appendChild(nameEl);
-      slot.appendChild(playBtn);
-      slot.appendChild(barEl);
-    } else {
-      slot.className = 'prog-slot prog-slot--empty';
+        slot.appendChild(removeBtn);
+        slot.appendChild(romanEl);
+        slot.appendChild(nameEl);
+        slot.appendChild(playBtn);
+        slot.appendChild(barEl);
+      } else {
+        slot.className = 'prog-slot prog-slot--empty';
+      }
+
+      container.appendChild(slot);
     }
 
-    container.appendChild(slot);
-  }
-
-  // Attach remove button handlers
-  container.querySelectorAll('.prog-remove').forEach(function(btn) {
-    btn.addEventListener('click', function(e) {
-      e.stopPropagation();
-      removeFromProgression(parseInt(btn.dataset.index, 10));
+    // Attach remove button handlers
+    container.querySelectorAll('.prog-remove').forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        removeFromProgression(parseInt(btn.dataset.index, 10));
+      });
     });
   });
 }
@@ -204,9 +205,9 @@ function renderProgression() {
 // Shows/hides the helper hint text.
 // ---------------------------------------------------------------
 function updateProgressionHint() {
-  var hint = document.getElementById('progression-hint');
-  if (!hint) return;
-  hint.style.display = _progression.length === 0 ? 'block' : 'none';
+  document.querySelectorAll('[data-progression-hint]').forEach(function(hint) {
+    hint.style.display = _progression.length === 0 ? 'block' : 'none';
+  });
 }
 
 // ---------------------------------------------------------------

@@ -10,31 +10,56 @@
 // String 0 = low E, String 5 = high e
 var OPEN_PITCHES = [4, 9, 14, 19, 23, 28]; // E2 A2 D3 G3 B3 E4
 
-// Mode character notes (degree indices that differ from natural major)
+// Mode character notes (degree indices that differ from major scale)
+// Indices are 0-based positions in the parallel mode's own note array
 var MODE_CHARACTER = {
   'Ionian':     [],
-  'Dorian':     [5],
-  'Phrygian':   [1],
-  'Lydian':     [3],
-  'Mixolydian': [6],
-  'Aeolian':    [5, 6],
-  'Locrian':    [1, 4]
+  'Dorian':     [2, 6],    // b3, b7
+  'Phrygian':   [1, 5],    // b2, b6
+  'Lydian':     [3],       // #4
+  'Mixolydian': [6],       // b7
+  'Aeolian':    [2, 5, 6], // b3, b6, b7
+  'Locrian':    [1, 4],    // b2, b5
 };
+
+// Scale character note degree indices (0-based in scale's own interval array)
+var SCALE_CHARACTER = {
+  'Minor Pentatonic': [1],
+  'Major Pentatonic': [1,4],
+  'Blues Scale':      [3],
+  'Major Blues':      [2],
+  'Harmonic Minor':   [5,6],
+  'Melodic Minor':    [5,6],
+  'Diminished W-H':   [4,6],
+  'Whole Tone':       [3,4],
+};
+
+// ---------------------------------------------------------------
+// getScaleNotesForScale(key, scaleIndex)
+// Returns array of chromatic pitch classes (0–11) for the given
+// non-modal scale built on the given key as root.
+// ---------------------------------------------------------------
+function getScaleNotesForScale(key, scaleIndex) {
+  var normalized = normalizeKey(key);
+  var rootIdx = CHROMATIC.indexOf(normalized);
+  if (rootIdx === -1) return [];
+  return SCALE_DATA[scaleIndex].intervals.map(function(iv) {
+    return (rootIdx + iv) % 12;
+  });
+}
 
 // ---------------------------------------------------------------
 // getScaleNotes(key, modeIndex)
 // Returns array of 7 chromatic pitch classes (0–11) for the
-// nth mode of the given major key.
-// e.g. getScaleNotes('C', 1) → D Dorian of C major → [2,4,5,7,9,11,0]
-// rootPc = scaleNotes[0] (the mode's own root note)
+// parallel mode built on the given key as root.
+// e.g. getScaleNotes('C', 1) → C Dorian → [0,2,3,5,7,9,10]
+// scaleNotes[0] is always the key root regardless of mode.
 // ---------------------------------------------------------------
 function getScaleNotes(key, modeIndex) {
   var normalized = normalizeKey(key);
   var rootIdx = CHROMATIC.indexOf(normalized);
   if (rootIdx === -1) return [];
-  // Build major scale pitch classes, then rotate to start at modeIndex
-  var majorPCs = MAJOR_INTERVALS.map(function(iv) { return (rootIdx + iv) % 12; });
-  return majorPCs.slice(modeIndex).concat(majorPCs.slice(0, modeIndex));
+  return MODE_INTERVALS[modeIndex].map(function(iv) { return (rootIdx + iv) % 12; });
 }
 
 // ---------------------------------------------------------------
@@ -86,6 +111,8 @@ function getCAGEDPositions(key) {
 // Main render function. Called when key/mode/position changes.
 // ---------------------------------------------------------------
 function renderFretboard() {
+  if (typeof stopFretboardPractice === 'function') stopFretboardPractice();
+
   var section = document.getElementById('fretboard-section');
   if (!section) return;
 
@@ -101,16 +128,25 @@ function renderFretboard() {
   var position  = AppState.currentPosition || 'all';
   var showNames = AppState.showNoteNames !== false;
 
-  var scaleNotes = getScaleNotes(key, modeIndex);
-  var rootPc     = scaleNotes[0];
+  var isScaleMode = AppState.scaleMode === 'scales';
+  var scaleNotes, rootPc, charPcs, noteNames, intervalLabels;
+  if (isScaleMode) {
+    var scaleIndex = AppState.currentScale || 0;
+    var scaleDef = SCALE_DATA[scaleIndex];
+    scaleNotes = getScaleNotesForScale(key, scaleIndex);
+    rootPc = scaleNotes[0];
+    charPcs = (SCALE_CHARACTER[scaleDef.name] || []).map(function(d) { return scaleNotes[d]; });
+    noteNames = getScaleNoteNamesForScale(key, scaleIndex);
+    intervalLabels = scaleDef.intervalLabels;
+  } else {
+    scaleNotes = getScaleNotes(key, modeIndex);
+    rootPc = scaleNotes[0];
+    var charDegrees = MODE_CHARACTER[MODE_NAMES[modeIndex]] || [];
+    charPcs = charDegrees.map(function(deg) { return scaleNotes[deg]; });
+    noteNames = getScaleNoteNames(key, modeIndex);
+    intervalLabels = getModeIntervalLabels(modeIndex);
+  }
 
-  // Character notes for this mode (as pitch classes)
-  var charDegrees = MODE_CHARACTER[MODE_NAMES[modeIndex]] || [];
-  var charPcs = charDegrees.map(function(deg) { return scaleNotes[deg]; });
-
-  // Note names for display
-  var noteNames = getScaleNoteNames(key, modeIndex);
-  var intervalLabels = ['1', '2', '3', '4', '5', '6', '7'];
   // Build map from pitch class to display label
   var pcToLabel = {};
   var pcToInterval = {};
@@ -138,6 +174,9 @@ function renderFretboard() {
   var DOT_R       = 9;
   var NUT_X       = MARGIN_LEFT;
 
+  var isLefty = AppState.isLefty;
+  function fx(x) { return isLefty ? (SVG_W - x) : x; }
+
   var svg = document.getElementById('fretboard-svg');
   if (!svg) return;
 
@@ -152,23 +191,23 @@ function renderFretboard() {
 
   // Draw nut
   svg.appendChild(svgEl('line', {
-    x1: NUT_X, y1: MARGIN_TOP,
-    x2: NUT_X, y2: MARGIN_TOP + (NUM_STRINGS - 1) * STR_H,
+    x1: fx(NUT_X), y1: MARGIN_TOP,
+    x2: fx(NUT_X), y2: MARGIN_TOP + (NUM_STRINGS - 1) * STR_H,
     'class': 'fb-nut'
   }));
 
   // Draw fret lines
   for (var f = 1; f <= NUM_FRETS; f++) {
-    var fx = MARGIN_LEFT + f * FRET_W;
+    var fretLineX = fx(MARGIN_LEFT + f * FRET_W);
     svg.appendChild(svgEl('line', {
-      x1: fx, y1: MARGIN_TOP,
-      x2: fx, y2: MARGIN_TOP + (NUM_STRINGS - 1) * STR_H,
+      x1: fretLineX, y1: MARGIN_TOP,
+      x2: fretLineX, y2: MARGIN_TOP + (NUM_STRINGS - 1) * STR_H,
       'class': 'fb-fret-line'
     }));
 
     // Fret number labels
     if ([3, 5, 7, 9, 12, 15].indexOf(f) !== -1) {
-      var labelX = MARGIN_LEFT + (f - 0.5) * FRET_W;
+      var labelX = fx(MARGIN_LEFT + (f - 0.5) * FRET_W);
       var lbl = svgEl('text', {
         x: labelX,
         y: MARGIN_TOP + (NUM_STRINGS - 1) * STR_H + 16,
@@ -187,13 +226,10 @@ function renderFretboard() {
   // Standard guitar diagrams: top string = low E (thickest)
   for (var s = 0; s < NUM_STRINGS; s++) {
     var sy = MARGIN_TOP + s * STR_H;
-    var strokeW = 1 + (NUM_STRINGS - 1 - s) * 0.35; // thicker = lower string
-    if (AppState.isLefty) {
-      strokeW = 1 + s * 0.35; // reversed for lefty
-    }
+    var strokeW = 1 + (NUM_STRINGS - 1 - s) * 0.35; // thicker = lower-pitched string (top)
     svg.appendChild(svgEl('line', {
-      x1: NUT_X, y1: sy,
-      x2: MARGIN_LEFT + NUM_FRETS * FRET_W, y2: sy,
+      x1: fx(NUT_X), y1: sy,
+      x2: fx(MARGIN_LEFT + NUM_FRETS * FRET_W), y2: sy,
       'class': 'fb-string-line',
       'stroke-width': strokeW
     }));
@@ -202,7 +238,7 @@ function renderFretboard() {
   // Inlay dots (decorative)
   var inlayFrets = [3, 5, 7, 9, 12];
   inlayFrets.forEach(function(f) {
-    var ix = MARGIN_LEFT + (f - 0.5) * FRET_W;
+    var ix = fx(MARGIN_LEFT + (f - 0.5) * FRET_W);
     var iy = MARGIN_TOP + ((NUM_STRINGS - 1) / 2) * STR_H;
     if (f === 12) {
       svg.appendChild(svgEl('circle', { cx: ix, cy: iy - STR_H * 0.8, r: 4, 'class': 'fb-inlay' }));
@@ -213,15 +249,11 @@ function renderFretboard() {
   });
 
   // String order for display:
-  // For standard (righty): strings array index 0 = top row = low E (pitch string 0)
-  // For lefty: strings array index 0 = top row = high e (pitch string 5)
+  // Both righty and lefty: top = low E (fat string), bottom = high e (thin string).
+  // Horizontal flip is handled separately by fx(). String order always matches
+  // the player's view looking down at the fretboard.
   function getPhysicalString(visualRow) {
-    // visualRow 0 = top of fretboard
-    if (AppState.isLefty) {
-      return NUM_STRINGS - 1 - visualRow; // lefty: top = high e
-    } else {
-      return visualRow; // righty: top = low E
-    }
+    return visualRow;
   }
 
   // Draw scale dots
@@ -242,9 +274,9 @@ function renderFretboard() {
 
       var dotX;
       if (fret === 0) {
-        dotX = NUT_X - 14; // open string — place left of nut
+        dotX = fx(NUT_X - 14); // open string — place outside nut
       } else {
-        dotX = MARGIN_LEFT + (fret - 0.5) * FRET_W;
+        dotX = fx(MARGIN_LEFT + (fret - 0.5) * FRET_W);
       }
 
       // Determine dot class
@@ -260,7 +292,9 @@ function renderFretboard() {
       // Draw dot circle
       svg.appendChild(svgEl('circle', {
         cx: dotX, cy: sy2, r: DOT_R,
-        'class': dotClass
+        'class': dotClass,
+        'data-prac-s': physStr,
+        'data-prac-f': fret
       }));
 
       // Draw label
@@ -270,7 +304,9 @@ function renderFretboard() {
           x: dotX, y: sy2 + 1,
           'class': 'fb-dot-label',
           'text-anchor': 'middle',
-          'dominant-baseline': 'central'
+          'dominant-baseline': 'central',
+          'data-prac-s': physStr,
+          'data-prac-f': fret
         });
         textEl.textContent = labelText;
         svg.appendChild(textEl);
@@ -278,9 +314,20 @@ function renderFretboard() {
     }
   }
 
-  // Update active states on mode buttons
-  document.querySelectorAll('.fb-mode-btn').forEach(function(btn, i) {
-    btn.classList.toggle('active', i === modeIndex);
+  // Update active states on mode or scale buttons
+  if (!isScaleMode) {
+    document.querySelectorAll('.fb-mode-btn').forEach(function(btn, i) {
+      btn.classList.toggle('active', i === modeIndex);
+    });
+  } else {
+    var activeSI = AppState.currentScale || 0;
+    document.querySelectorAll('.fb-scale-btn').forEach(function(btn) {
+      btn.classList.toggle('active', parseInt(btn.dataset.scale, 10) === activeSI);
+    });
+  }
+  // Update type buttons
+  document.querySelectorAll('.fb-type-btn').forEach(function(btn) {
+    btn.classList.toggle('active', btn.dataset.type === (AppState.scaleMode || 'modes'));
   });
 
   // Update CAGED position buttons
@@ -305,9 +352,19 @@ function initFretboard() {
   var section = document.getElementById('fretboard-section');
   if (!section) return;
 
+  // Build type switcher buttons
+  var typeBtnsHtml =
+    '<button class="btn fb-type-btn active" data-type="modes">MODES</button>' +
+    '<button class="btn fb-type-btn" data-type="scales">SCALES</button>';
+
   // Build mode buttons
   var modeBtnsHtml = MODE_NAMES.map(function(name, i) {
     return '<button class="btn fb-mode-btn" data-mode="' + i + '">' + name + '</button>';
+  }).join('');
+
+  // Build scale buttons from SCALE_DATA
+  var scaleBtnsHtml = SCALE_DATA.map(function(sd, i) {
+    return '<button class="btn fb-scale-btn" data-scale="' + i + '">' + sd.shortName + '</button>';
   }).join('');
 
   // Build CAGED position buttons
@@ -321,8 +378,13 @@ function initFretboard() {
       '<div class="panel-title">Fretboard <span id="fb-key-label"></span></div>' +
       '<div class="fretboard-controls">' +
         '<div class="fretboard-control-group">' +
-          '<span class="fretboard-control-label">Mode</span>' +
+          typeBtnsHtml +
+        '</div>' +
+        '<div class="fretboard-control-group" id="fb-mode-row">' +
           modeBtnsHtml +
+        '</div>' +
+        '<div class="fretboard-control-group" id="fb-scale-row" style="display:none">' +
+          scaleBtnsHtml +
         '</div>' +
         '<div class="fretboard-control-group">' +
           '<span class="fretboard-control-label">Position</span>' +
@@ -330,6 +392,13 @@ function initFretboard() {
         '</div>' +
         '<div class="fretboard-control-group">' +
           '<button class="btn" id="fb-toggle-labels">Show Intervals</button>' +
+        '</div>' +
+        '<div class="fretboard-control-group">' +
+          '<button class="btn" id="fb-practice-btn">&#9654; Play Scale</button>' +
+          '<label class="fb-bpm-label">BPM' +
+            '<input type="number" id="fb-bpm-input" value="60" min="30" max="200" class="fb-bpm-input">' +
+          '</label>' +
+          '<span id="fb-practice-info" class="fb-practice-info"></span>' +
         '</div>' +
       '</div>' +
       '<div class="fretboard-wrap">' +
@@ -343,14 +412,59 @@ function initFretboard() {
       '</div>' +
     '</div>';
 
-  // Mode buttons
   section.addEventListener('click', function(e) {
+    // Type switcher (MODES / SCALES)
+    var typeBtn = e.target.closest('.fb-type-btn');
+    if (typeBtn) {
+      AppState.scaleMode = typeBtn.dataset.type;
+      AppState.currentPosition = 'all';
+      var modeRow = document.getElementById('fb-mode-row');
+      var scaleRow = document.getElementById('fb-scale-row');
+      if (modeRow) modeRow.style.display = AppState.scaleMode === 'modes' ? '' : 'none';
+      if (scaleRow) scaleRow.style.display = AppState.scaleMode === 'scales' ? '' : 'none';
+      var fbKeyLabel = document.getElementById('fb-key-label');
+      if (fbKeyLabel && AppState.currentKey) {
+        if (AppState.scaleMode === 'scales') {
+          fbKeyLabel.textContent = '— ' + AppState.currentKey + ' ' + SCALE_DATA[AppState.currentScale || 0].name;
+        } else {
+          fbKeyLabel.textContent = '— ' + AppState.currentKey + ' ' + MODE_NAMES[AppState.currentMode || 0];
+        }
+      }
+      renderFretboard();
+      if (AppState.scaleMode === 'scales') {
+        if (typeof renderScaleRelPanel === 'function') renderScaleRelPanel();
+        if (typeof renderModeRelPanel === 'function') renderModeRelPanel();
+      } else {
+        if (typeof renderScaleRelPanel === 'function') renderScaleRelPanel();
+        if (typeof renderModeRelPanel === 'function') renderModeRelPanel();
+      }
+      return;
+    }
+
+    // Mode buttons
     var modeBtn = e.target.closest('.fb-mode-btn');
     if (modeBtn) {
       AppState.currentMode = parseInt(modeBtn.dataset.mode, 10);
+      var fbKeyLabel = document.getElementById('fb-key-label');
+      if (fbKeyLabel && AppState.currentKey) {
+        fbKeyLabel.textContent = '— ' + AppState.currentKey + ' ' + MODE_NAMES[AppState.currentMode];
+      }
       renderFretboard();
-      // Also update mode relationship panel if visible
       if (typeof renderModeRelPanel === 'function') renderModeRelPanel();
+      return;
+    }
+
+    // Scale buttons
+    var scaleBtn = e.target.closest('.fb-scale-btn');
+    if (scaleBtn) {
+      AppState.currentScale = parseInt(scaleBtn.dataset.scale, 10);
+      AppState.currentPosition = 'all';
+      var fbKeyLabel = document.getElementById('fb-key-label');
+      if (fbKeyLabel && AppState.currentKey) {
+        fbKeyLabel.textContent = '— ' + AppState.currentKey + ' ' + SCALE_DATA[AppState.currentScale].name;
+      }
+      renderFretboard();
+      if (typeof renderScaleRelPanel === 'function') renderScaleRelPanel();
       return;
     }
 
@@ -368,5 +482,147 @@ function initFretboard() {
       renderFretboard();
       return;
     }
+
+    var practiceBtn = e.target.closest('#fb-practice-btn');
+    if (practiceBtn) {
+      if (_fbPracticeTimer) {
+        stopFretboardPractice();
+      } else {
+        startFretboardPractice();
+      }
+      return;
+    }
   });
+
+  section.addEventListener('change', function(e) {
+    if (e.target.id === 'fb-bpm-input' && _fbPracticeTimer) {
+      startFretboardPractice();
+    }
+  });
+}
+
+// ── Fretboard Practice Mode ─────────────────────────────────
+var _fbPracticeTimer = null;
+var _fbPracticeSeq   = [];
+var _fbPracticeIdx   = 0;
+var _fbPracticeDir   = 1;  // 1 = ascending, -1 = descending
+
+function getFretboardPracticeSequence() {
+  var key = AppState.currentKey;
+  if (!key) return [];
+  var position   = AppState.currentPosition || 'all';
+  var scaleNotes;
+  if (AppState.scaleMode === 'scales') {
+    scaleNotes = getScaleNotesForScale(key, AppState.currentScale || 0);
+  } else {
+    scaleNotes = getScaleNotes(key, AppState.currentMode || 0);
+  }
+  var MIDI_OPEN  = [40, 45, 50, 55, 59, 64];
+
+  var positionRange = null;
+  if (position !== 'all' && typeof position === 'number') {
+    var positions = getCAGEDPositions(key);
+    positionRange = positions[position - 1] || null;
+  }
+
+  var notes = [];
+  for (var physStr = 0; physStr < 6; physStr++) {
+    var openPitch = OPEN_PITCHES[physStr];
+    for (var fret = 0; fret <= 15; fret++) {
+      var notePc = (openPitch + fret) % 12;
+      if (scaleNotes.indexOf(notePc) === -1) continue;
+      if (positionRange && (fret < positionRange.start || fret > positionRange.end)) continue;
+      var degreeIdx = scaleNotes.indexOf(notePc);
+      notes.push({ physStr: physStr, fret: fret, pc: notePc, degree: degreeIdx + 1,
+                   midi: MIDI_OPEN[physStr] + fret });
+    }
+  }
+  notes.sort(function(a, b) { return a.midi - b.midi; });
+
+  // Rotate to start from modal root so each mode sounds distinct.
+  // scaleNotes[0] is always the modal root (e.g., D for Dorian, E for Phrygian).
+  var rootPc = scaleNotes[0];
+  var rootNoteIdx = -1;
+  for (var i = 0; i < notes.length; i++) {
+    if (notes[i].pc === rootPc) { rootNoteIdx = i; break; }
+  }
+  if (rootNoteIdx > 0) {
+    notes = notes.slice(rootNoteIdx).concat(notes.slice(0, rootNoteIdx));
+  }
+
+  return notes;
+}
+
+function _fbPracticeStep() {
+  document.querySelectorAll('[data-prac-s].fb-dot--active').forEach(function(el) {
+    el.classList.remove('fb-dot--active');
+  });
+
+  var note = _fbPracticeSeq[_fbPracticeIdx];
+  if (!note) { stopFretboardPractice(); return; }
+
+  // Highlight circle + label
+  var svg = document.getElementById('fretboard-svg');
+  if (svg) {
+    svg.querySelectorAll('[data-prac-s="' + note.physStr + '"][data-prac-f="' + note.fret + '"]')
+      .forEach(function(el) { el.classList.add('fb-dot--active'); });
+  }
+
+  if (typeof window.playScaleNote === 'function') {
+    window.playScaleNote(note.midi, 0.45);
+  }
+
+  // Show degree label
+  var ivLabels, noteNamesArr;
+  if (AppState.scaleMode === 'scales') {
+    var si = AppState.currentScale || 0;
+    ivLabels = SCALE_DATA[si].intervalLabels;
+    noteNamesArr = getScaleNoteNamesForScale(AppState.currentKey, si);
+  } else {
+    ivLabels = getModeIntervalLabels(AppState.currentMode || 0);
+    noteNamesArr = getScaleNoteNames(AppState.currentKey, AppState.currentMode || 0);
+  }
+  var degLabel = ivLabels[note.degree - 1] || String(note.degree);
+  var noteName  = noteNamesArr[note.degree - 1] || '';
+  var info = document.getElementById('fb-practice-info');
+  if (info) info.textContent = degLabel + (noteName ? '  \u00b7  ' + noteName : '');
+
+  // Advance and bounce
+  _fbPracticeIdx += _fbPracticeDir;
+  if (_fbPracticeIdx >= _fbPracticeSeq.length) {
+    _fbPracticeDir = -1;
+    _fbPracticeIdx = _fbPracticeSeq.length - 2;
+  } else if (_fbPracticeIdx < 0) {
+    _fbPracticeDir = 1;
+    _fbPracticeIdx = 1;
+  }
+}
+
+function startFretboardPractice() {
+  stopFretboardPractice();
+  _fbPracticeSeq = getFretboardPracticeSequence();
+  if (!_fbPracticeSeq.length) return;
+  _fbPracticeIdx = 0;
+  _fbPracticeDir = 1;
+
+  var bpmInput = document.getElementById('fb-bpm-input');
+  var bpm      = bpmInput ? (parseInt(bpmInput.value, 10) || 60) : 60;
+  var interval = Math.round(60000 / bpm);
+
+  _fbPracticeStep();
+  _fbPracticeTimer = setInterval(_fbPracticeStep, interval);
+
+  var btn = document.getElementById('fb-practice-btn');
+  if (btn) btn.textContent = '\u25a0 Stop';
+}
+
+function stopFretboardPractice() {
+  if (_fbPracticeTimer) { clearInterval(_fbPracticeTimer); _fbPracticeTimer = null; }
+  document.querySelectorAll('[data-prac-s].fb-dot--active').forEach(function(el) {
+    el.classList.remove('fb-dot--active');
+  });
+  var btn  = document.getElementById('fb-practice-btn');
+  if (btn)  btn.textContent = '\u25b6 Play Scale';
+  var info = document.getElementById('fb-practice-info');
+  if (info) info.textContent = '';
 }

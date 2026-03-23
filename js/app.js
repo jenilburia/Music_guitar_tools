@@ -6,7 +6,53 @@
        practice mode, borrowed chords, analysis panel.
    ============================================================= */
 
+// ── Tab switching ──────────────────────────────────────────────
+
+var TAB_IDS = ['circle', 'fretboard', 'modes', 'progressions', 'practice', 'song-lookup'];
+
+function switchTab(tabId) {
+  if (TAB_IDS.indexOf(tabId) === -1) return;
+  AppState.activeTab = tabId;
+  localStorage.setItem('activeTab', tabId);
+
+  document.querySelectorAll('.tab-btn').forEach(function(btn) {
+    var active = btn.dataset.tab === tabId;
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-selected', active ? 'true' : 'false');
+  });
+
+  document.querySelectorAll('.mobile-nav-item').forEach(function(item) {
+    item.classList.toggle('active', item.dataset.tab === tabId);
+  });
+
+  TAB_IDS.forEach(function(id) {
+    var panel = document.getElementById('tab-panel-' + id);
+    if (panel) panel.classList.toggle('tab-panel--hidden', id !== tabId);
+  });
+
+  // Render fretboard on first visit to Fretboard tab
+  if (tabId === 'fretboard' && AppState.currentKey) {
+    renderFretboard();
+    if (AppState.scaleMode === 'scales') {
+      renderScaleRelPanel();
+    } else {
+      renderModeRelPanel();
+    }
+  }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
+
+  var _progressionPlaying = false;
+  var _progressionTimer   = null;
+  var _activePlayBtn      = null;  // whichever button is currently showing "Stop"
+
+  function resetPlayState() {
+    _progressionPlaying = false;
+    clearTimeout(_progressionTimer);
+    if (_activePlayBtn) { _activePlayBtn.innerHTML = '&#9654; Play'; }
+    _activePlayBtn = null;
+  }
 
   var circleSvg = document.getElementById('circle-svg');
 
@@ -25,18 +71,48 @@ document.addEventListener('DOMContentLoaded', function() {
   updateProgressionHint();
   renderAnalysisPanel();
 
+  // ── BPM: restore from localStorage before modules init ──────
+  var savedBPM = parseInt(localStorage.getItem('practiceBPM'), 10) || AppState.practiceBPM || 80;
+  AppState.practiceBPM = savedBPM;
+
   // v2 modules
   initFretboard();
   initModeRelPanel();
+  initScaleRelPanel();
+  initLearningPath();
   initProgressionLib();
   initPracticeMode();
   initBorrowedToggle();
+  if (typeof initSongLookup === 'function') initSongLookup();
 
-  // Hide v2 sections until a key is selected
-  var fretSection    = document.getElementById('fretboard-section');
-  var modeRelSection = document.getElementById('mode-rel-section');
-  if (fretSection)    fretSection.style.display = 'none';
-  if (modeRelSection) modeRelSection.style.display = 'none';
+  // ── BPM sliders in mini panels ───────────────────────────────
+  document.querySelectorAll('[data-mini-bpm]').forEach(function(slider) {
+    slider.value = savedBPM;
+    var valEl = slider.parentElement.querySelector('[data-mini-bpm-val]');
+    if (valEl) valEl.textContent = savedBPM + ' BPM';
+    slider.addEventListener('input', function() {
+      var bpm = parseInt(this.value, 10);
+      AppState.practiceBPM = bpm;
+      localStorage.setItem('practiceBPM', bpm);
+      document.querySelectorAll('[data-mini-bpm]').forEach(function(s) { s.value = bpm; });
+      document.querySelectorAll('[data-mini-bpm-val]').forEach(function(v) { v.textContent = bpm + ' BPM'; });
+    });
+  });
+
+  // ── Populate key selector ────────────────────────────────────
+  var keySelectEl = document.getElementById('header-key-select');
+  if (keySelectEl) {
+    CIRCLE.forEach(function(key, i) {
+      var opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = key + ' Major';
+      keySelectEl.appendChild(opt);
+    });
+    keySelectEl.addEventListener('change', function() {
+      var idx = parseInt(this.value, 10);
+      if (!isNaN(idx)) selectKey(circleSvg, idx);
+    });
+  }
 
   // ── Event: key selected on circle ──────────────────────────
   circleSvg.addEventListener('keySelected', function(e) {
@@ -52,7 +128,8 @@ document.addEventListener('DOMContentLoaded', function() {
     AppState.currentMode = 0;
     AppState.currentPosition = 'all';
 
-    document.getElementById('header-key').textContent = key + ' Major';
+    var ks = document.getElementById('header-key-select');
+    if (ks) ks.value = index;
     renderChordGrid(AppState.currentChords, key);
     renderModeList(AppState.currentChords);
 
@@ -61,12 +138,63 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // v2: update fretboard and related panels
     var fbKeyLabel = document.getElementById('fb-key-label');
-    if (fbKeyLabel) fbKeyLabel.textContent = '— ' + key + ' Major';
+    if (fbKeyLabel) fbKeyLabel.textContent = '— ' + key + ' ' + MODE_NAMES[AppState.currentMode || 0];
     renderFretboard();
-    renderModeRelPanel();
+    if (AppState.scaleMode === 'scales') {
+      renderScaleRelPanel();
+    } else {
+      renderModeRelPanel();
+    }
 
     // Update progression library (to enable load buttons)
     renderProgressionLib();
+  });
+
+  // ── Tab navigation ──────────────────────────────────────────
+  switchTab(localStorage.getItem('activeTab') || 'circle');
+
+  // ── Default to C Major ───────────────────────────────────────
+  selectKey(circleSvg, 0);
+  generateAndDisplay(null);   // populate builder on first load
+
+  document.querySelectorAll('.tab-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() { switchTab(btn.dataset.tab); });
+  });
+
+  // ── Hamburger / mobile nav ──────────────────────────────────
+  var hamburgerBtn = document.getElementById('btn-hamburger');
+  var mobileNav    = document.getElementById('mobile-nav');
+
+  function closeMobileNav() {
+    mobileNav.classList.remove('is-open');
+    hamburgerBtn.setAttribute('aria-expanded', 'false');
+    mobileNav.setAttribute('aria-hidden', 'true');
+  }
+  function openMobileNav() {
+    mobileNav.classList.add('is-open');
+    hamburgerBtn.setAttribute('aria-expanded', 'true');
+    mobileNav.setAttribute('aria-hidden', 'false');
+  }
+
+  hamburgerBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    if (mobileNav.classList.contains('is-open')) closeMobileNav();
+    else openMobileNav();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!mobileNav.contains(e.target) && e.target !== hamburgerBtn) closeMobileNav();
+  });
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeMobileNav();
+  });
+
+  document.querySelectorAll('.mobile-nav-item').forEach(function(item) {
+    item.addEventListener('click', function() {
+      switchTab(item.dataset.tab);
+      closeMobileNav();
+    });
   });
 
   // ── Event: chord card clicked (add to progression) ─────────
@@ -115,26 +243,83 @@ document.addEventListener('DOMContentLoaded', function() {
     if (typeof playChord === 'function') playChord(btn.dataset.voicingKey);
   });
 
-  // ── Event: Play button on progression slot ──────────────────
-  document.getElementById('progression-slots').addEventListener('click', function(e) {
+  // ── Event: Play button on progression slot (document-level, covers all containers) ──
+  document.addEventListener('click', function(e) {
     var btn = e.target.closest('.prog-play');
     if (!btn) return;
     e.stopPropagation();
     if (typeof playChord === 'function') playChord(btn.dataset.voicingKey);
   });
 
+  // ── Event: Mini panel action buttons (data-mini-action) ─────
+  document.addEventListener('click', function(e) {
+    var btn = e.target.closest('[data-mini-action]');
+    if (!btn) return;
+    var action = btn.dataset.miniAction;
+    if (action === 'generate') {
+      if (!AppState.currentKey) return;
+      generateAndDisplay(null);
+    } else if (action === 'shuffle') {
+      if (!AppState.currentKey) return;
+      shuffleProgression();
+    } else if (action === 'play') {
+      if (_progressionPlaying) {
+        if (typeof stopProgression === 'function') stopProgression();
+        resetPlayState();
+        return;
+      }
+      var chords = getProgression();
+      if (chords.length && typeof playProgression === 'function') {
+        var totalMs = playProgression(chords, AppState.practiceBPM) * 1000;
+        _progressionPlaying = true;
+        _activePlayBtn = btn;
+        btn.innerHTML = '&#9632; Stop';
+        _progressionTimer = setTimeout(function() {
+          resetPlayState();
+        }, totalMs);
+      }
+    } else if (action === 'clear') {
+      clearProgression();
+      renderExplanation(null);
+    }
+  });
+
   // ── Event: Play All progression ─────────────────────────────
   document.getElementById('btn-play-all').addEventListener('click', function() {
-    var chords = getProgression();
-    if (!chords.length) {
-      flashBtn(this, 'Empty!');
+    var btn = this;
+    if (_progressionPlaying) {
+      if (typeof stopProgression === 'function') stopProgression();
+      resetPlayState();
       return;
     }
-    if (typeof playProgression === 'function') playProgression(chords);
+    var chords = getProgression();
+    if (!chords.length) { flashBtn(btn, 'Empty!'); return; }
+    if (typeof playProgression === 'function') {
+      var totalMs = playProgression(chords, AppState.practiceBPM) * 1000;
+      _progressionPlaying = true;
+      _activePlayBtn = btn;
+      btn.innerHTML = '&#9632; Stop';
+      _progressionTimer = setTimeout(function() {
+        resetPlayState();
+      }, totalMs);
+    }
   });
 
   // ── Event: Mode row clicked (generate mode-specific) ───────
   document.getElementById('mode-list').addEventListener('click', function(e) {
+    // Handle "Load chords" button
+    var loadBtn = e.target.closest('.btn-load-mode-chords');
+    if (loadBtn) {
+      if (!AppState.currentChords || !AppState.currentChords.length) return;
+      var mi = parseInt(loadBtn.dataset.modeIndex, 10);
+      var modeChords = [];
+      for (var k = 0; k < 7; k++) {
+        modeChords.push(AppState.currentChords[(mi + k) % 7]);
+      }
+      setProgression(modeChords);
+      return;
+    }
+
     // Don't trigger if clicking wild toggle or inside wild section
     if (e.target.closest('.btn-wild-toggle') || e.target.closest('.mode-wild')) return;
 
@@ -168,6 +353,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // ── Event: Clear progression ────────────────────────────────
   document.getElementById('btn-clear').addEventListener('click', function() {
+    if (getProgression().length === 0) return;
+    if (!confirm('Clear progression?')) return;
     clearProgression();
     renderExplanation(null);
   });
@@ -209,6 +396,17 @@ document.addEventListener('DOMContentLoaded', function() {
     renderFretboard();
   });
 
+  // ── Event: Modal handedness toggle ──────────────────────────
+  document.getElementById('modal-hand-btn').addEventListener('click', function() {
+    AppState.isLefty = !AppState.isLefty;
+    localStorage.setItem('handedness', AppState.isLefty ? 'left' : 'right');
+    updateHandednessUI();
+    renderFretboard();
+    if (AppState.currentVoicingKey) {
+      renderChordDiagram(AppState.currentVoicingKey, document.getElementById('diagram-svg'));
+    }
+  });
+
   // ── Event: Close modal ──────────────────────────────────────
   document.getElementById('modal-close').addEventListener('click', closeDiagramModal);
   document.getElementById('modal-overlay').addEventListener('click', function(e) {
@@ -240,11 +438,21 @@ function updateHandednessUI() {
       ? 'Left-handed · low E on right'
       : 'Right-handed · low E on left';
   }
+  var modalBtn = document.getElementById('modal-hand-btn');
+  if (modalBtn) {
+    modalBtn.textContent = AppState.isLefty ? 'L' : 'R';
+    if (AppState.isLefty) {
+      modalBtn.classList.add('active-state');
+    } else {
+      modalBtn.classList.remove('active-state');
+    }
+  }
 }
 
 // ── Modal helpers ──────────────────────────────────────────────
 
 function openDiagramModal(voicingKey, chordName, modeName) {
+  AppState.currentVoicingKey = voicingKey;
   document.getElementById('modal-title').textContent    = chordName;
   document.getElementById('modal-subtitle').textContent = modeName + ' mode';
   renderChordDiagram(voicingKey, document.getElementById('diagram-svg'));
@@ -281,7 +489,9 @@ function renderChordDiagram(voicingKey, svgEl) {
 
   var voicing  = getVoicing(voicingKey);
   // Respect handedness setting
-  var frets    = AppState.isLefty ? mirrorForLefty(voicing.frets) : voicing.frets.slice();
+  var mirrored = AppState.isLefty ? mirrorForLefty(voicing) : { frets: voicing.frets.slice(), fingers: voicing.fingers ? voicing.fingers.slice() : null };
+  var frets    = mirrored.frets;
+  var fingers  = mirrored.fingers;
   var baseFret = voicing.baseFret;
   var numStrings = 6;
 
@@ -347,6 +557,13 @@ function renderChordDiagram(voicingKey, svgEl) {
     var barX1 = D_START_X + barreStrings[0] * D_STR_GAP;
     var barX2 = D_START_X + barreStrings[barreStrings.length - 1] * D_STR_GAP;
     svgEl.appendChild(el('line', { x1: barX1, y1: barY, x2: barX2, y2: barY, 'class': 'barre-bar' }));
+    // Barre always uses index finger (1)
+    var barLbl = el('text', {
+      x: (barX1 + barX2) / 2, y: barY + 1,
+      'class': 'fret-dot-label', 'text-anchor': 'middle', 'dominant-baseline': 'central'
+    });
+    barLbl.textContent = '1';
+    svgEl.appendChild(barLbl);
   }
 
   // Finger dots
@@ -360,6 +577,13 @@ function renderChordDiagram(voicingKey, svgEl) {
     var isBarre = (barreStrings.length >= 3 && fretNum === minFret);
     if (!isBarre) {
       svgEl.appendChild(el('circle', { cx: dotX, cy: dotY, r: D_DOT_R, 'class': 'fret-dot' }));
+      // Finger number label
+      if (fingers && fingers[s3] > 0) {
+        var lbl = el('text', { x: dotX, y: dotY + 1, 'class': 'fret-dot-label',
+                               'text-anchor': 'middle', 'dominant-baseline': 'central' });
+        lbl.textContent = fingers[s3];
+        svgEl.appendChild(lbl);
+      }
     }
   }
 
@@ -373,6 +597,13 @@ function renderChordDiagram(voicingKey, svgEl) {
       var dx = D_START_X + s4 * D_STR_GAP;
       var dy = D_START_Y + (rfn - 0.5) * D_FRET_GAP;
       svgEl.appendChild(el('circle', { cx: dx, cy: dy, r: D_DOT_R, 'class': 'fret-dot' }));
+      // Finger number label for extra barre dots
+      if (fingers && fingers[s4] > 0) {
+        var elbl = el('text', { x: dx, y: dy + 1, 'class': 'fret-dot-label',
+                                'text-anchor': 'middle', 'dominant-baseline': 'central' });
+        elbl.textContent = fingers[s4];
+        svgEl.appendChild(elbl);
+      }
     }
   }
 }

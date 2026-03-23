@@ -105,6 +105,9 @@ function initCircle(svgEl) {
     // --- Major ring segment ---
     var majorArc = createArcPath(CIRCLE_MID_R, CIRCLE_OUTER_R, startAngle, endAngle);
     majorArc.setAttribute('class', 'arc-major');
+    majorArc.setAttribute('tabindex', '0');
+    majorArc.setAttribute('role', 'button');
+    majorArc.setAttribute('aria-label', majorKey + ' major');
     majorArc.dataset.index    = i;
     majorArc.dataset.key      = majorKey;
     majorArc.dataset.ringType = 'major';
@@ -136,6 +139,15 @@ function initCircle(svgEl) {
     var target = e.target;
     var index = target.dataset && target.dataset.index;
     if (index === undefined || index === null || index === '') return;
+    selectKey(svgEl, parseInt(index, 10));
+  });
+
+  // Keyboard navigation — Enter/Space activates focused arc segment
+  svgEl.addEventListener('keydown', function(e) {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    var index = e.target.dataset && e.target.dataset.index;
+    if (index === undefined || index === '') return;
+    e.preventDefault();
     selectKey(svgEl, parseInt(index, 10));
   });
 }
