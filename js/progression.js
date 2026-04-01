@@ -73,9 +73,21 @@ function buildFunctionSummary(chords) {
 // Appends a chord descriptor to the progression (max MAX_SLOTS).
 // ---------------------------------------------------------------
 function addToProgression(chord) {
-  if (_progression.length >= MAX_SLOTS) return;
+  if (_progression.length >= MAX_SLOTS) {
+    document.querySelectorAll('[data-progression-hint]').forEach(function(hint) {
+      hint.style.display = 'block';
+      hint.textContent = 'Progression is full (8/8)';
+      hint.classList.add('progression-hint--full');
+      setTimeout(function() {
+        hint.textContent = 'Click a chord above, or hit Generate to auto-build a progression.';
+        hint.classList.remove('progression-hint--full');
+        if (_progression.length > 0) hint.style.display = 'none';
+      }, 2000);
+    });
+    return;
+  }
   _progression.push(chord);
-  renderProgression();
+  renderProgression(true);
   updateProgressionHint();
   renderAnalysisPanel();
   if (typeof window.onProgressionChanged === 'function') window.onProgressionChanged();
@@ -140,7 +152,7 @@ function getProgressionString() {
 // Renders the progression slot strip into #progression-slots.
 // Shows filled slots for chords, empty dashed slots for blanks.
 // ---------------------------------------------------------------
-function renderProgression() {
+function renderProgression(flashLast) {
   document.querySelectorAll('[data-progression-slots]').forEach(function(container) {
     container.innerHTML = '';
 
@@ -153,11 +165,13 @@ function renderProgression() {
         if (chord.borrowed) slotCls += ' prog-slot--borrowed';
         slot.className = slotCls;
         slot.dataset.slotIndex = i;
+        slot.setAttribute('aria-label', 'Slot ' + (i + 1) + ': ' + chord.chordName);
 
         var removeBtn = document.createElement('button');
         removeBtn.className = 'prog-remove';
         removeBtn.dataset.index = i;
         removeBtn.title = 'Remove';
+        removeBtn.setAttribute('aria-label', 'Remove slot ' + (i + 1) + ': ' + chord.chordName);
         removeBtn.innerHTML = '&times;';
 
         var playBtn = document.createElement('button');
@@ -197,6 +211,15 @@ function renderProgression() {
         removeFromProgression(parseInt(btn.dataset.index, 10));
       });
     });
+
+    // Flash the most-recently-added slot
+    if (flashLast && _progression.length > 0) {
+      var lastSlot = container.querySelector('[data-slot-index="' + (_progression.length - 1) + '"]');
+      if (lastSlot) {
+        lastSlot.classList.add('slot-flash');
+        setTimeout(function() { lastSlot.classList.remove('slot-flash'); }, 400);
+      }
+    }
   });
 }
 

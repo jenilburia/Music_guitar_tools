@@ -464,7 +464,7 @@ var PROGRESSION_TEMPLATES = [
 // _lastTemplateIndex — avoids repeating the same template on Shuffle
 // ---------------------------------------------------------------
 var _lastTemplateIndex = -1;
-var _lastGeneratedMode = null;
+var _lastGeneratedMode = undefined;
 
 // ---------------------------------------------------------------
 // getTemplatesForMode(modeName)
@@ -472,6 +472,9 @@ var _lastGeneratedMode = null;
 // or all key-based templates if modeName is null.
 // ---------------------------------------------------------------
 function getTemplatesForMode(modeName) {
+  if (modeName === undefined) {
+    return PROGRESSION_TEMPLATES.slice();  // all 32 templates
+  }
   return PROGRESSION_TEMPLATES.filter(function(t) {
     return t.mode === modeName;
   });

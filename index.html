@@ -34,6 +34,18 @@
         <button class="tab-btn" role="tab" aria-selected="false"
                 data-tab="song-lookup">Song Lookup</button>
       </nav>
+      <div class="mini-player" id="mini-player" role="group" aria-label="Practice transport">
+        <button class="mini-player__mode" id="mini-player-mode"
+                aria-pressed="false" title="Switch beat sound">Beats</button>
+        <div class="mini-player__bpm" role="group" aria-label="BPM">
+          <button class="mini-player__bpm-btn" id="mini-bpm-dec"  aria-label="Decrease BPM">&#x2212;</button>
+          <input type="number" class="mini-player__bpm-val" id="mini-bpm-display" data-mini-bpm-val
+                 min="40" max="240" value="80" aria-label="BPM" aria-live="polite">
+          <button class="mini-player__bpm-btn" id="mini-bpm-inc"  aria-label="Increase BPM">+</button>
+        </div>
+        <button class="mini-player__play" id="mini-player-toggle"
+                aria-label="Start practice" disabled>&#9654;</button>
+      </div>
       <button class="btn--icon btn--hamburger" id="btn-hamburger"
               aria-label="Open navigation menu"
               aria-expanded="false"
@@ -43,6 +55,18 @@
         <span class="hamburger-bar"></span>
       </button>
       <div class="header-controls">
+        <div class="mini-player mini-player--mobile" id="mini-player-mobile" role="group" aria-label="Practice transport">
+          <button class="mini-player__mode mini-player__mode--sm" id="mini-player-mode-m"
+                  aria-pressed="false" title="Switch beat sound">B</button>
+          <div class="mini-player__bpm" role="group" aria-label="BPM">
+            <button class="mini-player__bpm-btn" id="mini-bpm-dec-m"  aria-label="Decrease BPM">&#x2212;</button>
+            <input type="number" class="mini-player__bpm-val" id="mini-bpm-display-m" data-mini-bpm-val
+                   min="40" max="240" value="80" aria-label="BPM" aria-live="polite">
+            <button class="mini-player__bpm-btn" id="mini-bpm-inc-m"  aria-label="Increase BPM">+</button>
+          </div>
+          <button class="mini-player__play mini-player__play--sm" id="mini-player-toggle-m"
+                  aria-label="Start practice" disabled>&#9654;</button>
+        </div>
         <button class="btn--icon" id="btn-lefty" title="Switch between left-handed and right-handed chord diagrams">L</button>
         <button class="btn--icon" id="btn-theme" title="Toggle dark / light mode">◑</button>
       </div>
@@ -78,13 +102,23 @@
           <div class="progression-header">
             <h2 class="panel-title">Progression Builder</h2>
             <div class="progression-actions">
-              <button class="btn btn--primary" id="btn-generate" title="Auto-generate a chord progression for the selected key">Generate</button>
-              <button class="btn btn--tonal" id="btn-shuffle" title="Shuffle — try a different progression">Shuffle</button>
+              <select id="mode-filter" class="mode-filter-select" title="Filter Shuffle to a specific mode">
+                <option value="">Any mode</option>
+                <option value="Ionian">Ionian</option>
+                <option value="Dorian">Dorian</option>
+                <option value="Phrygian">Phrygian</option>
+                <option value="Lydian">Lydian</option>
+                <option value="Mixolydian">Mixolydian</option>
+                <option value="Aeolian">Aeolian</option>
+                <option value="Locrian">Locrian</option>
+              </select>
+              <button class="btn btn--primary" id="btn-shuffle" title="Shuffle — try a different progression across all modes">Shuffle</button>
               <button class="btn btn--tonal" id="btn-play-all" title="Play all chords in the progression">&#9654; Play</button>
               <button class="btn btn--ghost" id="btn-copy" title="Copy chord names to clipboard">Copy</button>
               <button class="btn btn--danger" id="btn-clear">Clear</button>
             </div>
           </div>
+          <div id="audio-error-msg" class="audio-error-msg" style="display:none">Audio unavailable — try Chrome or Safari.</div>
           <div class="progression-slots" id="progression-slots" data-progression-slots aria-live="polite"></div>
           <p class="progression-hint" id="progression-hint" data-progression-hint>Click a chord above, or hit Generate to auto-build a progression.</p>
           <!-- Feature 13: Analysis panel -->
@@ -97,7 +131,10 @@
           <div class="chords-panel-header">
             <h2 class="panel-title">Diatonic Chords <span id="key-label"></span></h2>
             <!-- Feature 14: Borrowed chord toggle -->
-            <button class="btn btn-borrowed-toggle" id="btn-borrowed" title="Show borrowed chords from the parallel minor">Borrowed</button>
+            <div class="borrowed-toggle-group">
+              <button class="btn btn-borrowed-toggle" id="btn-borrowed" title="Show borrowed chords from the parallel minor">Borrowed</button>
+              <span class="borrowed-subtitle">Chords from the parallel minor key.</span>
+            </div>
           </div>
           <div class="chord-grid" id="chord-grid">
             <p class="placeholder">Click a key on the circle to see its chords.</p>
@@ -129,6 +166,16 @@
           <h2 class="panel-title">Active Progression</h2>
           <div class="prog-mini-actions">
             <button class="btn btn--primary" data-mini-action="generate">Generate</button>
+            <select id="mode-filter-modes" class="mode-filter-select" title="Filter Shuffle to a specific mode">
+              <option value="">Any mode</option>
+              <option value="Ionian">Ionian</option>
+              <option value="Dorian">Dorian</option>
+              <option value="Phrygian">Phrygian</option>
+              <option value="Lydian">Lydian</option>
+              <option value="Mixolydian">Mixolydian</option>
+              <option value="Aeolian">Aeolian</option>
+              <option value="Locrian">Locrian</option>
+            </select>
             <button class="btn btn--tonal"   data-mini-action="shuffle">Shuffle</button>
             <button class="btn btn--tonal"   data-mini-action="play">&#9654; Play</button>
             <button class="btn btn--danger"  data-mini-action="clear">Clear</button>
@@ -158,8 +205,7 @@
         <div class="prog-mini-header">
           <h2 class="panel-title">Active Progression</h2>
           <div class="prog-mini-actions">
-            <button class="btn btn--primary" data-mini-action="generate">Generate</button>
-            <button class="btn btn--tonal"   data-mini-action="shuffle">Shuffle</button>
+            <button class="btn btn--primary" data-mini-action="shuffle">Shuffle</button>
             <button class="btn btn--tonal"   data-mini-action="play">&#9654; Play</button>
             <button class="btn btn--danger"  data-mini-action="clear">Clear</button>
           </div>
@@ -170,7 +216,7 @@
           <span class="prog-mini-bpm-val" data-mini-bpm-val></span>
         </div>
         <div class="progression-slots" data-progression-slots></div>
-        <p class="progression-hint" data-progression-hint>Generate a progression or load one from the library below.</p>
+        <p class="progression-hint" data-progression-hint>Shuffle to load a random progression from any genre, or click Load on a card below.</p>
       </section>
       <!-- Feature 12: Progression Library -->
       <div id="prog-lib-section"></div>
@@ -245,6 +291,7 @@
   <script src="js/modes.js"></script>
   <script src="js/progressionLib.js"></script>
   <script src="js/practiceMode.js"></script>
+  <script src="js/miniPlayer.js"></script>
   <script src="js/songLookup.js"></script>
   <script src="js/app.js"></script>
 

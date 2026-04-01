@@ -10,15 +10,49 @@
 
   var _ctx = null;
   var _activeOscillators = [];
+  var _audioUnsupported = !(window.AudioContext || window.webkitAudioContext);
+  var _audioErrorShown  = false;
+
+  function _showAudioError() {
+    if (_audioErrorShown) return;
+    _audioErrorShown = true;
+    var el = document.getElementById('audio-error-msg');
+    if (el) { el.style.display = 'block'; }
+  }
 
   function getCtx() {
     if (!_ctx) {
-      _ctx = new (window.AudioContext || window.webkitAudioContext)();
+      try {
+        _ctx = new (window.AudioContext || window.webkitAudioContext)();
+      } catch(e) {
+        _showAudioError();
+        return null;
+      }
     }
     if (_ctx.state === 'suspended') {
       _ctx.resume();
     }
     return _ctx;
+  }
+
+  // Ensures AudioContext is running before invoking callback(ctx).
+  // On mobile (iOS Safari) the context starts suspended; resume() is async,
+  // so we must wait for it before scheduling any audio.
+  function ensureCtx(callback) {
+    if (_audioUnsupported) { _showAudioError(); return; }
+    if (!_ctx) {
+      try {
+        _ctx = new (window.AudioContext || window.webkitAudioContext)();
+      } catch(e) {
+        _showAudioError();
+        return;
+      }
+    }
+    if (_ctx.state === 'suspended') {
+      _ctx.resume().then(function() { callback(_ctx); });
+    } else {
+      callback(_ctx);
+    }
   }
 
   // Standard tuning: MIDI note numbers for each open string
@@ -61,22 +95,23 @@
     if (typeof getVoicing !== 'function') return;
 
     var voicing = getVoicing(voicingKey);
-    var ctx = getCtx();
-    var now = ctx.currentTime;
-    var strumDelay = 0.030; // 30ms between strings (low E → high e strum)
-
-    for (var i = 0; i < 6; i++) {
-      var fret = voicing.frets[i];
-      if (fret === -1) continue; // muted string — skip
-      var midi = OPEN_MIDI[i] + fret + (voicing.baseFret - 1);
-      playNote(ctx, midiToFreq(midi), now + i * strumDelay, 1.8);
-    }
+    ensureCtx(function(ctx) {
+      var now = ctx.currentTime;
+      var strumDelay = 0.030; // 30ms between strings (low E → high e strum)
+      for (var i = 0; i < 6; i++) {
+        var fret = voicing.frets[i];
+        if (fret === -1) continue; // muted string — skip
+        var midi = OPEN_MIDI[i] + fret + (voicing.baseFret - 1);
+        playNote(ctx, midiToFreq(midi), now + i * strumDelay, 1.8);
+      }
+    });
   };
 
   window.playScaleNote = function(midiNote, duration) {
     if (!(window.AudioContext || window.webkitAudioContext)) return;
-    var ctx = getCtx();
-    playNote(ctx, midiToFreq(midiNote), ctx.currentTime, duration || 0.45);
+    ensureCtx(function(ctx) {
+      playNote(ctx, midiToFreq(midiNote), ctx.currentTime, duration || 0.45);
+    });
   };
 
   window.stopProgression = function() {
@@ -96,6 +131,7 @@
   var _drumNextTime = 0;        // AudioContext time of next 8th note
   var _drumBpm      = 80;
   var _drumNoiseBuffer = null;  // pre-built noise buffer (reused)
+  var _drumMode     = 'beats';  // 'beats' | 'metro'
 
   var DRUM_LOOKAHEAD = 0.10;    // schedule 100 ms ahead
   var DRUM_SCHEDULE_MS = 25;    // scheduler fires every 25 ms
@@ -170,18 +206,35 @@
     noise.stop(t + 0.05);
   }
 
+  function metroClick(ctx, time) {
+    var osc  = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = 1000;
+    gain.gain.setValueAtTime(0.35, time);
+    gain.gain.exponentialRampToValueAtTime(0.001, time + 0.04);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(time); osc.stop(time + 0.05);
+  }
+
   function drumSchedulerTick() {
     var ctx = getCtx();
+    if (!ctx) return;
     var secPer8th = (60 / _drumBpm) / 2;
     while (_drumNextTime < ctx.currentTime + DRUM_LOOKAHEAD) {
       var t = _drumNextTime;
       var beat = _drumBeat8th;
-      // hi-hat on every 8th note
-      drumHiHat(ctx, t);
-      // kick on beats 1 and 3 (8th positions 0 and 4)
-      if (beat === 0 || beat === 4) { drumKick(ctx, t); }
-      // snare on beats 2 and 4 (8th positions 2 and 6)
-      if (beat === 2 || beat === 6) { drumSnare(ctx, t); }
+      if (_drumMode === 'metro') {
+        // metronome click on every quarter note (8th positions 0, 2, 4, 6)
+        if (beat === 0 || beat === 2 || beat === 4 || beat === 6) { metroClick(ctx, t); }
+      } else {
+        // hi-hat on every 8th note
+        drumHiHat(ctx, t);
+        // kick on beats 1 and 3 (8th positions 0 and 4)
+        if (beat === 0 || beat === 4) { drumKick(ctx, t); }
+        // snare on beats 2 and 4 (8th positions 2 and 6)
+        if (beat === 2 || beat === 6) { drumSnare(ctx, t); }
+      }
       _drumBeat8th  = (beat + 1) % 8;
       _drumNextTime += secPer8th;
     }
@@ -190,11 +243,12 @@
 
   window.startDrumBeat = function(bpm) {
     if (_drumTimer) { clearTimeout(_drumTimer); _drumTimer = null; }
-    var ctx = getCtx();
     _drumBpm      = bpm || 80;
     _drumBeat8th  = 0;
-    _drumNextTime = ctx.currentTime + 0.05; // tiny startup delay
-    drumSchedulerTick();
+    ensureCtx(function(ctx) {
+      _drumNextTime = ctx.currentTime + 0.05; // tiny startup delay
+      drumSchedulerTick();
+    });
   };
 
   window.stopDrumBeat = function() {
@@ -206,31 +260,32 @@
     // scheduler picks up new BPM on next invocation automatically
   };
 
+  window.setDrumMode = function(mode) { _drumMode = mode; };
+  window.getDrumMode = function() { return _drumMode; };
+
   // Play all chords in a progression with timing between them
   window.playProgression = function(chords, bpm) {
     if (!(window.AudioContext || window.webkitAudioContext)) return;
     if (!chords || !chords.length) return;
     if (typeof getVoicing !== 'function') return;
 
-    var ctx           = getCtx();
     var secPerBeat    = 60 / (bpm || 72);
     var beatsPerChord = 4;
     var chordDuration = secPerBeat * beatsPerChord;
-    var totalDuration = chords.length * chordDuration;
 
-    chords.forEach(function(chord, i) {
-      var voicing    = getVoicing(chord.voicingKey);
-      var chordStart = ctx.currentTime + i * chordDuration;
+    ensureCtx(function(ctx) {
+      chords.forEach(function(chord, i) {
+        var voicing    = getVoicing(chord.voicingKey);
+        var chordStart = ctx.currentTime + i * chordDuration;
 
-      for (var s = 0; s < 6; s++) {
-        var fret = voicing.frets[s];
-        if (fret === -1) continue;
-        var midi = OPEN_MIDI[s] + fret + (voicing.baseFret - 1);
-        playNote(ctx, midiToFreq(midi), chordStart + s * 0.030, chordDuration - 0.12);
-      }
+        for (var s = 0; s < 6; s++) {
+          var fret = voicing.frets[s];
+          if (fret === -1) continue;
+          var midi = OPEN_MIDI[s] + fret + (voicing.baseFret - 1);
+          playNote(ctx, midiToFreq(midi), chordStart + s * 0.030, chordDuration - 0.12);
+        }
+      });
     });
-
-    return totalDuration;
   };
 
 })();

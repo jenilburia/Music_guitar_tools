@@ -150,6 +150,21 @@ function initCircle(svgEl) {
     e.preventDefault();
     selectKey(svgEl, parseInt(index, 10));
   });
+
+  // First-time hint: pulsing label until user selects a key
+  var CIRCLE_HINT_FLAG = 'circle_hint_seen';
+  if (!localStorage.getItem(CIRCLE_HINT_FLAG)) {
+    var hint = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    hint.setAttribute('x', 0);
+    hint.setAttribute('y', CIRCLE_OUTER_R + 22);
+    hint.setAttribute('class', 'circle-hint-text');
+    hint.textContent = '\u25b2 Click a key to start';
+    svgEl.appendChild(hint);
+    svgEl.addEventListener('keySelected', function() {
+      if (hint.parentNode) hint.parentNode.removeChild(hint);
+      localStorage.setItem(CIRCLE_HINT_FLAG, '1');
+    }, { once: true });
+  }
 }
 
 // ---------------------------------------------------------------

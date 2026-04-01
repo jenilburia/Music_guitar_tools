@@ -39,6 +39,18 @@ function switchTab(tabId) {
       renderModeRelPanel();
     }
   }
+
+  // Sync drum mode button state when switching to Practice tab
+  if (tabId === 'practice') {
+    var drumMode = typeof getDrumMode === 'function' ? getDrumMode() : 'beats';
+    ['mini-player-mode', 'mini-player-mode-m'].forEach(function(id) {
+      var modeBtn = document.getElementById(id);
+      if (!modeBtn) return;
+      var labels = { 'mini-player-mode': { beats: 'Beats', metro: 'Metro' }, 'mini-player-mode-m': { beats: 'B', metro: 'M' } };
+      modeBtn.textContent = drumMode === 'metro' ? labels[id].metro : labels[id].beats;
+      modeBtn.setAttribute('aria-pressed', drumMode === 'metro' ? 'true' : 'false');
+    });
+  }
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -53,6 +65,10 @@ document.addEventListener('DOMContentLoaded', function() {
     if (_activePlayBtn) { _activePlayBtn.innerHTML = '&#9654; Play'; }
     _activePlayBtn = null;
   }
+
+  window.stopProgressionPlayback = function() {
+    if (_progressionPlaying) { stopProgression(); resetPlayState(); }
+  };
 
   var circleSvg = document.getElementById('circle-svg');
 
@@ -75,6 +91,14 @@ document.addEventListener('DOMContentLoaded', function() {
   var savedBPM = parseInt(localStorage.getItem('practiceBPM'), 10) || AppState.practiceBPM || 80;
   AppState.practiceBPM = savedBPM;
 
+  // ── Fretboard state: restore from localStorage ───────────────
+  var savedScaleMode = localStorage.getItem('scaleMode');
+  if (savedScaleMode === 'scales' || savedScaleMode === 'modes') {
+    AppState.scaleMode = savedScaleMode;
+  }
+  var savedCurrentScale = parseInt(localStorage.getItem('currentScale'), 10);
+  if (!isNaN(savedCurrentScale)) AppState.currentScale = savedCurrentScale;
+
   // v2 modules
   initFretboard();
   initModeRelPanel();
@@ -82,20 +106,31 @@ document.addEventListener('DOMContentLoaded', function() {
   initLearningPath();
   initProgressionLib();
   initPracticeMode();
+  if (typeof initMiniPlayer === 'function') initMiniPlayer();
   initBorrowedToggle();
   if (typeof initSongLookup === 'function') initSongLookup();
 
   // ── BPM sliders in mini panels ───────────────────────────────
+  function _setBpmDisplay(el, val) {
+    if (el.tagName === 'INPUT') el.value = val;
+    else el.textContent = el.closest('.mini-player') ? val : val + ' BPM';
+  }
+
   document.querySelectorAll('[data-mini-bpm]').forEach(function(slider) {
     slider.value = savedBPM;
     var valEl = slider.parentElement.querySelector('[data-mini-bpm-val]');
-    if (valEl) valEl.textContent = savedBPM + ' BPM';
+    if (valEl) _setBpmDisplay(valEl, savedBPM);
     slider.addEventListener('input', function() {
       var bpm = parseInt(this.value, 10);
       AppState.practiceBPM = bpm;
       localStorage.setItem('practiceBPM', bpm);
       document.querySelectorAll('[data-mini-bpm]').forEach(function(s) { s.value = bpm; });
-      document.querySelectorAll('[data-mini-bpm-val]').forEach(function(v) { v.textContent = bpm + ' BPM'; });
+      document.querySelectorAll('[data-mini-bpm-val]').forEach(function(v) { _setBpmDisplay(v, bpm); });
+      var practiceBpmSlider = document.getElementById('practice-bpm');
+      if (practiceBpmSlider) {
+        practiceBpmSlider.value = bpm;
+        practiceBpmSlider.dispatchEvent(new Event('input', { bubbles: true }));
+      }
     });
   });
 
@@ -258,10 +293,23 @@ document.addEventListener('DOMContentLoaded', function() {
     var action = btn.dataset.miniAction;
     if (action === 'generate') {
       if (!AppState.currentKey) return;
+      btn.disabled = true;
       generateAndDisplay(null);
+      requestAnimationFrame(function() { btn.disabled = false; });
     } else if (action === 'shuffle') {
       if (!AppState.currentKey) return;
-      shuffleProgression();
+      btn.disabled = true;
+      var tabPanel = btn.closest('.tab-panel');
+      var tabId = tabPanel ? tabPanel.id : '';
+      if (tabId === 'tab-panel-modes') {
+        var modeVal = document.getElementById('mode-filter-modes').value;
+        generateAndDisplay(modeVal === '' ? undefined : modeVal);
+      } else if (tabId === 'tab-panel-progressions') {
+        loadRandomLibraryProgression();
+      } else {
+        shuffleProgression();
+      }
+      requestAnimationFrame(function() { btn.disabled = false; });
     } else if (action === 'play') {
       if (_progressionPlaying) {
         if (typeof stopProgression === 'function') stopProgression();
@@ -270,7 +318,8 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       var chords = getProgression();
       if (chords.length && typeof playProgression === 'function') {
-        var totalMs = playProgression(chords, AppState.practiceBPM) * 1000;
+        var totalMs = chords.length * (60 / (AppState.practiceBPM || 72)) * 4 * 1000;
+        playProgression(chords, AppState.practiceBPM);
         _progressionPlaying = true;
         _activePlayBtn = btn;
         btn.innerHTML = '&#9632; Stop';
@@ -295,7 +344,8 @@ document.addEventListener('DOMContentLoaded', function() {
     var chords = getProgression();
     if (!chords.length) { flashBtn(btn, 'Empty!'); return; }
     if (typeof playProgression === 'function') {
-      var totalMs = playProgression(chords, AppState.practiceBPM) * 1000;
+      var totalMs = chords.length * (60 / (AppState.practiceBPM || 72)) * 4 * 1000;
+      playProgression(chords, AppState.practiceBPM);
       _progressionPlaying = true;
       _activePlayBtn = btn;
       btn.innerHTML = '&#9632; Stop';
@@ -328,18 +378,11 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!AppState.currentKey) return;
 
     generateAndDisplay(row.dataset.modeName);
+    document.getElementById('mode-filter').value = row.dataset.modeName;
+    document.getElementById('mode-filter-modes').value = row.dataset.modeName;
 
     row.classList.add('active');
     setTimeout(function() { row.classList.remove('active'); }, 380);
-  });
-
-  // ── Event: Generate progression (key-based) ────────────────
-  document.getElementById('btn-generate').addEventListener('click', function() {
-    if (!AppState.currentKey) {
-      flashBtn(this, 'Pick a key!');
-      return;
-    }
-    generateAndDisplay(null);
   });
 
   // ── Event: Shuffle progression ──────────────────────────────
@@ -348,15 +391,35 @@ document.addEventListener('DOMContentLoaded', function() {
       flashBtn(this, 'Pick a key!');
       return;
     }
-    shuffleProgression();
+    var btn = this;
+    btn.disabled = true;
+    var modeVal = document.getElementById('mode-filter').value;
+    generateAndDisplay(modeVal === '' ? undefined : modeVal);
+    requestAnimationFrame(function() { btn.disabled = false; });
   });
 
   // ── Event: Clear progression ────────────────────────────────
   document.getElementById('btn-clear').addEventListener('click', function() {
     if (getProgression().length === 0) return;
-    if (!confirm('Clear progression?')) return;
-    clearProgression();
-    renderExplanation(null);
+    var btn = this;
+    if (btn.dataset.confirming === 'true') {
+      btn.dataset.confirming = '';
+      btn.textContent = 'Clear';
+      btn.classList.remove('btn--danger--confirming');
+      clearProgression();
+      renderExplanation(null);
+      return;
+    }
+    btn.dataset.confirming = 'true';
+    btn.textContent = 'Sure?';
+    btn.classList.add('btn--danger--confirming');
+    setTimeout(function() {
+      if (btn.dataset.confirming === 'true') {
+        btn.dataset.confirming = '';
+        btn.textContent = 'Clear';
+        btn.classList.remove('btn--danger--confirming');
+      }
+    }, 2000);
   });
 
   // ── Event: Copy progression to clipboard ───────────────────
@@ -385,6 +448,9 @@ document.addEventListener('DOMContentLoaded', function() {
     var next = (current === 'dark') ? 'light' : 'dark';
     document.documentElement.setAttribute('data-theme', next);
     localStorage.setItem('theme', next);
+    var themeBtn = document.getElementById('btn-theme');
+    themeBtn.classList.add('btn--icon--saved');
+    setTimeout(function() { themeBtn.classList.remove('btn--icon--saved'); }, 700);
   });
 
   // ── Event: Handedness toggle ────────────────────────────────
@@ -392,8 +458,10 @@ document.addEventListener('DOMContentLoaded', function() {
     AppState.isLefty = !AppState.isLefty;
     localStorage.setItem('handedness', AppState.isLefty ? 'left' : 'right');
     updateHandednessUI();
-    // Re-render fretboard for handedness change
     renderFretboard();
+    var handBtn = document.getElementById('btn-lefty');
+    handBtn.classList.add('btn--icon--saved');
+    setTimeout(function() { handBtn.classList.remove('btn--icon--saved'); }, 700);
   });
 
   // ── Event: Modal handedness toggle ──────────────────────────
@@ -414,6 +482,22 @@ document.addEventListener('DOMContentLoaded', function() {
   });
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') closeDiagramModal();
+  });
+  // Focus trap inside chord diagram modal
+  document.addEventListener('keydown', function(e) {
+    var overlay = document.getElementById('modal-overlay');
+    if (overlay.hasAttribute('hidden')) return;
+    if (e.key !== 'Tab') return;
+    var modal = document.getElementById('modal-chord');
+    var focusable = modal.querySelectorAll('button, [tabindex]:not([tabindex="-1"])');
+    if (!focusable.length) return;
+    var first = focusable[0];
+    var last  = focusable[focusable.length - 1];
+    if (e.shiftKey) {
+      if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+    } else {
+      if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
   });
 
 });
@@ -458,6 +542,10 @@ function openDiagramModal(voicingKey, chordName, modeName) {
   renderChordDiagram(voicingKey, document.getElementById('diagram-svg'));
   updateHandednessUI();
   document.getElementById('modal-overlay').removeAttribute('hidden');
+  setTimeout(function() {
+    var closeBtn = document.getElementById('modal-close');
+    if (closeBtn) closeBtn.focus();
+  }, 50);
 }
 
 function closeDiagramModal() {

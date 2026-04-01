@@ -193,16 +193,18 @@ function renderModeList(chords) {
           '<div class="mode-formula-row mode-formula-row--iv">' + ivHtml + '</div>' +
           '<div class="mode-formula-row mode-formula-row--notes">' + notesHtml + '</div>' +
         '</div>' +
+        '<div class="mode-row-actions">' +
+          '<button class="btn-wild-toggle" data-target="' + wildSectionId + '" title="Show song references">' +
+            '♪ In the Wild <span class="wild-icon">+</span>' +
+          '</button>' +
+          '<button class="btn btn-load-mode-chords" data-mode-index="' + mi + '" ' +
+            'title="Load ' + chord.modeName + ' chords into progression builder">' +
+            'Load chords' +
+          '</button>' +
+        '</div>' +
         '<div class="mode-wild" id="' + wildSectionId + '" style="display:none">' +
           '<ul class="wild-list">' + wildItemsHtml + '</ul>' +
         '</div>' +
-        '<button class="btn-wild-toggle" data-target="' + wildSectionId + '" title="Show song references">' +
-          '▶ In the Wild' +
-        '</button>' +
-        '<button class="btn btn-load-mode-chords" data-mode-index="' + mi + '" ' +
-          'title="Load ' + chord.modeName + ' chords into progression builder">' +
-          'Load chords' +
-        '</button>' +
       '</div>' +
       '<span class="mode-generate-hint">Generate</span>';
 
@@ -218,7 +220,8 @@ function renderModeList(chords) {
       if (!section) return;
       var isOpen = section.style.display !== 'none';
       section.style.display = isOpen ? 'none' : 'block';
-      btn.textContent = isOpen ? '▶ In the Wild' : '▼ In the Wild';
+      var icon = btn.querySelector('.wild-icon');
+      if (icon) icon.textContent = isOpen ? '+' : '−';
     });
   });
 }

@@ -26,6 +26,13 @@
   var _loopCount      = 0;
   var _loopsSinceRamp = 0;
 
+  // ── Public state observer ─────────────────────────────────────
+
+  function _notifyStateChange() {
+    var snap = { isPlaying: _isPlaying, bpm: _bpm, hasChords: getProgression().length > 0 };
+    if (typeof window.onPracticeStateChanged === 'function') window.onPracticeStateChanged(snap);
+  }
+
   // ── Timing ──────────────────────────────────────────────────
 
   function getMsPerChord() {
@@ -90,6 +97,7 @@
           updateDrumBPM(_bpm);
         }
         updateBpmDisplay();
+        _notifyStateChange();
       }
     }
 
@@ -114,6 +122,7 @@
     }
     updatePracticeUI();
     tick();
+    _notifyStateChange();
   }
 
   function pausePractice() {
@@ -126,6 +135,7 @@
     if (typeof stopDrumBeat === 'function') stopDrumBeat();
     hideChordInfo();
     updatePracticeUI();
+    _notifyStateChange();
   }
 
   function resetPractice() {
@@ -140,6 +150,7 @@
     if (typeof stopDrumBeat === 'function') stopDrumBeat();
     hideChordInfo();
     updatePracticeUI();
+    _notifyStateChange();
   }
 
   function togglePractice() {
@@ -148,6 +159,23 @@
 
   // Called externally when progression is cleared mid-play
   window.stopPractice = function() { resetPractice(); };
+
+  // Called by the global mini-player to enable/disable drum and sync the checkbox UI
+  window.setPracticeDrumEnabled = function(enabled) {
+    _drumEnabled = enabled;
+    var cb = document.getElementById('practice-drum-enable');
+    if (cb) cb.checked = enabled;
+    var modeRow = document.getElementById('practice-drum-mode-row');
+    if (modeRow) modeRow.style.display = enabled ? '' : 'none';
+  };
+
+  window.togglePractice = function() {
+    if (_isPlaying) { pausePractice(); } else { startPractice(); }
+  };
+
+  window.getPracticeState = function() {
+    return { isPlaying: _isPlaying, bpm: _bpm, hasChords: getProgression().length > 0 };
+  };
 
   // ── Chord info panel (Features 5 + 6) ───────────────────────
 
@@ -193,6 +221,26 @@
     if (infoEl) infoEl.style.display = 'none';
   }
 
+  // ── Mode sync helper ────────────────────────────────────────
+
+  function _syncAllModeBtns(mode) {
+    // Update practice tab drum-mode buttons
+    document.querySelectorAll('#practice-drum-mode-group .practice-bpc-btn').forEach(function(b) {
+      b.classList.toggle('active', b.dataset.dmode === mode);
+    });
+    // Update global header mode buttons (desktop + mobile)
+    var labels = {
+      'mini-player-mode':   { beats: 'Beats', metro: 'Metro' },
+      'mini-player-mode-m': { beats: 'B',     metro: 'M'     },
+    };
+    Object.keys(labels).forEach(function(id) {
+      var btn = document.getElementById(id);
+      if (!btn) return;
+      btn.textContent = labels[id][mode];
+      btn.setAttribute('aria-pressed', mode === 'metro' ? 'true' : 'false');
+    });
+  }
+
   // ── UI helpers ───────────────────────────────────────────────
 
   function updateBpmDisplay() {
@@ -233,6 +281,7 @@
   window.onProgressionChanged = function() {
     if (_isPlaying && getProgression().length === 0) { resetPractice(); }
     updatePracticeUI();
+    _notifyStateChange();
   };
 
   // ── Init ─────────────────────────────────────────────────────
@@ -299,6 +348,15 @@
             '</label>' +
           '</div>' +
 
+          // Row 3b: Drum mode (shown only when drum is enabled)
+          '<div class="practice-row" id="practice-drum-mode-row" style="display:none">' +
+            '<span class="practice-label">Drum mode</span>' +
+            '<div class="practice-bpc-group" id="practice-drum-mode-group">' +
+              '<button class="practice-bpc-btn active" data-dmode="beats">Beats</button>' +
+              '<button class="practice-bpc-btn" data-dmode="metro">Metro</button>' +
+            '</div>' +
+          '</div>' +
+
           // Row 4: Feature 4 — Auto speed-up
           '<div class="practice-row practice-row--wrap">' +
             '<label class="practice-check-label">' +
@@ -344,9 +402,15 @@
       AppState.practiceBPM = _bpm;
       localStorage.setItem('practiceBPM', _bpm);
       updateBpmDisplay();
+      document.querySelectorAll('[data-mini-bpm]').forEach(function(s) { s.value = _bpm; });
+      document.querySelectorAll('[data-mini-bpm-val]').forEach(function(v) {
+        if (v.tagName === 'INPUT') v.value = _bpm;
+        else v.textContent = v.closest('.mini-player') ? _bpm : _bpm + ' BPM';
+      });
       if (_isPlaying && _drumEnabled && typeof updateDrumBPM === 'function') {
         updateDrumBPM(_bpm);
       }
+      _notifyStateChange();
     });
 
     // Start / Reset
@@ -367,6 +431,8 @@
     // Feature 2 — Drum beat
     document.getElementById('practice-drum-enable').addEventListener('change', function() {
       _drumEnabled = this.checked;
+      var modeRow = document.getElementById('practice-drum-mode-row');
+      if (modeRow) modeRow.style.display = _drumEnabled ? '' : 'none';
       if (_isPlaying) {
         if (_drumEnabled && typeof startDrumBeat === 'function') {
           startDrumBeat(_bpm);
@@ -375,6 +441,19 @@
         }
       }
     });
+
+    // Row 3b — Drum mode toggle
+    document.getElementById('practice-drum-mode-group').addEventListener('click', function(e) {
+      var btn = e.target.closest('.practice-bpc-btn');
+      if (!btn) return;
+      var mode = btn.dataset.dmode;
+      if (typeof window.setDrumMode === 'function') window.setDrumMode(mode);
+      _syncAllModeBtns(mode);
+    });
+
+    // Init drum mode buttons to reflect current mode
+    var initMode = typeof window.getDrumMode === 'function' ? window.getDrumMode() : 'beats';
+    _syncAllModeBtns(initMode);
 
     // Feature 4 — Auto ramp-up
     document.getElementById('practice-ramp-enable').addEventListener('change', function() {

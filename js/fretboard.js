@@ -354,23 +354,23 @@ function initFretboard() {
 
   // Build type switcher buttons
   var typeBtnsHtml =
-    '<button class="btn fb-type-btn active" data-type="modes">MODES</button>' +
-    '<button class="btn fb-type-btn" data-type="scales">SCALES</button>';
+    '<button class="btn fb-type-btn active" data-type="modes" title="Show modes of the selected key">MODES</button>' +
+    '<button class="btn fb-type-btn" data-type="scales" title="Show standalone scale shapes">SCALES</button>';
 
   // Build mode buttons
   var modeBtnsHtml = MODE_NAMES.map(function(name, i) {
-    return '<button class="btn fb-mode-btn" data-mode="' + i + '">' + name + '</button>';
+    return '<button class="btn fb-mode-btn" data-mode="' + i + '" title="' + name + ' mode">' + name + '</button>';
   }).join('');
 
   // Build scale buttons from SCALE_DATA
   var scaleBtnsHtml = SCALE_DATA.map(function(sd, i) {
-    return '<button class="btn fb-scale-btn" data-scale="' + i + '">' + sd.shortName + '</button>';
+    return '<button class="btn fb-scale-btn" data-scale="' + i + '" title="' + sd.name + '">' + sd.shortName + '</button>';
   }).join('');
 
   // Build CAGED position buttons
-  var posBtnsHtml = '<button class="btn fb-pos-btn active" data-pos="all">All</button>';
+  var posBtnsHtml = '<button class="btn fb-pos-btn active" data-pos="all" title="Show all positions">All</button>';
   for (var p = 1; p <= 5; p++) {
-    posBtnsHtml += '<button class="btn fb-pos-btn" data-pos="' + p + '">Pos ' + p + '</button>';
+    posBtnsHtml += '<button class="btn fb-pos-btn" data-pos="' + p + '" title="CAGED Position ' + p + '">Pos ' + p + '</button>';
   }
 
   section.innerHTML =
@@ -418,6 +418,7 @@ function initFretboard() {
     if (typeBtn) {
       AppState.scaleMode = typeBtn.dataset.type;
       AppState.currentPosition = 'all';
+      localStorage.setItem('scaleMode', AppState.scaleMode);
       var modeRow = document.getElementById('fb-mode-row');
       var scaleRow = document.getElementById('fb-scale-row');
       if (modeRow) modeRow.style.display = AppState.scaleMode === 'modes' ? '' : 'none';
@@ -458,6 +459,7 @@ function initFretboard() {
     var scaleBtn = e.target.closest('.fb-scale-btn');
     if (scaleBtn) {
       AppState.currentScale = parseInt(scaleBtn.dataset.scale, 10);
+      localStorage.setItem('currentScale', AppState.currentScale);
       AppState.currentPosition = 'all';
       var fbKeyLabel = document.getElementById('fb-key-label');
       if (fbKeyLabel && AppState.currentKey) {
